@@ -39,7 +39,7 @@ endmodule
 										Parameterized No-Enable Register
 ***********************************************************************************************************/
 
-module reg #(parameter WIDTH=8)
+module d_reg #(parameter WIDTH=8)
 
 (	input 					clock, reset,
 	input  		[WIDTH-1:0] d
@@ -96,22 +96,22 @@ endmodule
 module alu
 
 (	input 		[31:0] 	a, b,
-	input 		[3:0] 	sel,
+	input 		[2:0] 	sel,
 	output reg	[31:0]	y
 	output 				zero 	);
 
+	wire [31:0]	b2, sum, slt;
+
+	assign b2 = sel[2] ? ~b:b; 
+	assign sum = a + b2 + sel[2];		// this basically says if sel[2] then a-b otherwise a+b
+	assign slt = sum[31];				// but why not just do sum = sel[2] ? a-b : a+b; 
+
 	always @* begin
-		case(sel)
-			0: y = a + b;										// ADD
-			1: y = a - b;										// SUB
-			2: y = a & b;										// AND
-			3: y = a | b;										// OR
-			4: y = a ^ b;										// XOR
-			5: y = ~(a & b);									// NAND
-			6: y = ~(a | b);									// NOR
-			7: y = (a < b) ? a : b;								// Output smallest
-			8: y = ($signed(a) < $signed(b)) ? a : b;			// Output smallest, signed
-			default: y = 'bZ;
+		case(sel[1:0])
+			2'b00: y = a & b;
+			2'b01: y = a | b;
+			2'b10: y = sum;
+			2'b11: y = slt;
 		endcase
 	end
 
