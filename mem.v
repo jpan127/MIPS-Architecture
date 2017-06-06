@@ -18,7 +18,7 @@ module imem
 	reg	[31:0] rom [63:0];
 	
 	initial begin
-		$readmemh("memfile.dat", rom);
+		$readmemh("lab7_memfile.dat", rom);
 	end
 	
     assign y = rom[a];
@@ -32,25 +32,26 @@ endmodule
 module dmem 
 
 (	input			clock, we,
-	input	[31:0]	ra, wd,
+	input	[9:0]	ra, 
+	input	[31:0]	wd,
 	output 	[31:0]	rd 			);
 	
-	reg	[31:0] ram [63:0];
+	reg	[31:0] ram [1023:0];
 	integer	i;
 	
-	// initial begin
-	// 	for (i=0; i<64; i=i+1) begin
-	// 		ram[i] = 8'hFF;
-	// 	end
-	// end
+	initial begin
+		for (i=0; i<1024; i=i+1) begin
+			ram[i] = 32'b0;
+		end
+	end
 				
 	always @(posedge clock) begin
 		if (we) begin
-			ram[ra[31:2]] = wd;
+			ram[ra] <= wd;
 		end
 	end
 
-	assign rd = ram[ra[31:2]];
+	assign rd = ram[ra];
 
 endmodule
 

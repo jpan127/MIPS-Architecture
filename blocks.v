@@ -25,6 +25,7 @@ module regfile
 		for (i=0; i<32; i=i+1) begin
 			rf[i] = 0;
 		end
+		rf[29] = 32'h200; // R[$sp], not sure why
 	end
 
 	always @ (posedge clock) begin
@@ -54,6 +55,23 @@ module d_reg #(parameter WIDTH=32)
 endmodule
 
 /***********************************************************************************************************
+										Parameterized Enabled Register
+***********************************************************************************************************/
+
+module d_en_reg #(parameter WIDTH=32)
+
+(	input 					clock, reset, enable,
+	input  		[WIDTH-1:0] d,
+	output  reg [WIDTH-1:0]	q    		);
+
+	always @ (posedge clock, posedge reset) begin
+		if (reset)  	 q <= 0;
+		else if (enable) q <= d;
+	end
+	
+endmodule
+
+/***********************************************************************************************************
 												2-to-1 Mux
 ***********************************************************************************************************/
 
@@ -69,25 +87,24 @@ endmodule
 
 /***********************************************************************************************************
 												4-to-1 Mux
-												Not Used
 ***********************************************************************************************************/
 
-// module mux4 #(parameter WIDTH=32)
+module mux4 #(parameter WIDTH=32)
 
-// (	input 		[WIDTH-1:0] 	a, b, c, d,
-// 	input 		[1:0]			sel,
-// 	output reg	[WIDTH-1:0]		y    				);
+(	input 		[WIDTH-1:0] 	a, b, c, d,
+	input 		[1:0]			sel,
+	output reg	[WIDTH-1:0]		y    		);
 
-// 	always @* begin
-// 		case(sel)
-// 			0: y = a;
-// 			1: y = b;
-// 			2: y = c;
-// 			3: y = d;
-// 		endcase
-// 	end
+	always @* begin
+		case(sel)
+			2'b00: y = a;
+			2'b01: y = b;
+			2'b10: y = c;
+			2'b11: y = d;
+		endcase
+	end
 	
-// endmodule
+endmodule
 
 /***********************************************************************************************************
 													ALU
@@ -95,24 +112,53 @@ endmodule
 
 module alu
 
-(	input 		[31:0] 	a, b,
-	input 		[2:0] 	sel,
+(	input 				clock, reset,
+	input 		[31:0] 	a, b,
+	input 		[3:0] 	sel,
 	output reg	[31:0]	y,
 	output 				zero 	);
 
-	wire [31:0]	b2, sum, slt;
+	// wire [31:0]	b2, sum, slt;
 
-	assign b2 = sel[2] ? ~b:b; 
-	assign sum = a + b2 + sel[2];		// this basically says if sel[2] then a-b otherwise a+b
-	assign slt = sum[31];				// but why not just do sum = sel[2] ? a-b : a+b; 
+	// assign b2  = sel[2] ? ~b:b; 
+	// assign sum = a + b2 + sel[2];
+	// assign slt = sum[31];
+
+	reg  [31:0] d_hi, d_lo;
+	wire [31:0] q_hi, q_lo;
+	reg enable;
+
+	d_en_reg HI ( .clock(clock), .reset(reset), .enable(enable), .d(d_hi), .q(q_hi) );
+	d_en_reg LO ( .clock(clock), .reset(reset), .enable(enable), .d(d_lo), .q(q_lo) );
 
 	always @* begin
-		case(sel[1:0])
-			2'b00: y = a & b;
-			2'b01: y = a | b;
-			2'b10: y = sum;
-			2'b11: y = slt;
+
+		case(sel)
+			4'd7: enable = 1;
+			4'd8: enable = 1;
+			default: enable = 0;
 		endcase
+
+		case (sel)
+			4'd0: y = a + b;
+			4'd1: y = a - b;
+			4'd2: y = a + b;
+			4'd3: y = a - b;
+			4'd4: y = a & b;
+			4'd5: y = a | b;
+			4'd6: y = (a < b) ? 1 : 0;
+
+			4'd7: {d_hi, d_lo} = a * b;
+			4'd8: begin
+				d_hi = a / b;
+				d_lo = a - (b * d_hi);
+			end
+			4'd9:  y = q_hi;
+			4'd10: y = q_lo;
+			4'd11: y = a;		// JR, pass through a
+			default: y = 32'dZ;
+		endcase
+
 	end
 
 	assign zero = (y==0) ? 1 : 0;

@@ -15,8 +15,9 @@ module mips
 	output 	[31:0]	pc, alu_out, dmem_wd 	);
 
 	wire	[5:0] 	opcode, funct;
-	wire 	[2:0]	alu_ctrl;
-	wire 			zero, sel_result, sel_pc, sel_alu_b, sel_wa, rf_we, sel_jump;
+	wire 	[3:0]	alu_ctrl;
+	wire 			zero, sel_alu_b, rf_we;
+	wire	[1:0]	sel_pc, sel_result, sel_wa;
 
 	assign opcode = instruction[31:26];
 	assign funct  = instruction[5:0];
@@ -31,7 +32,6 @@ module mips
 		.sel_alu_b(sel_alu_b),
 		.sel_wa(sel_wa),
 		.rf_we(rf_we),
-		.sel_jump(sel_jump),
 		.alu_ctrl(alu_ctrl)
 	);
 
@@ -43,7 +43,6 @@ module mips
 		.sel_alu_b(sel_alu_b),
 		.sel_wa(sel_wa),
 		.rf_we(rf_we),
-		.sel_jump(sel_jump),
 		.alu_ctrl(alu_ctrl),
 		.instruction(instruction),
 		.rd(rd),
@@ -75,6 +74,6 @@ module top
 	);
 
 	imem IMEM ( .a(pc[7:2]), .y(instruction) );
-	dmem DMEM ( .clock(clock), .we(dmem_we), .ra(alu_out), .wd(dmem_wd), .rd(rd) );
+	dmem DMEM ( .clock(clock), .we(dmem_we), .ra(alu_out[9:0]), .wd(dmem_wd), .rd(rd) );
 
 endmodule
