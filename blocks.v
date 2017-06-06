@@ -8,6 +8,7 @@
 
 /***********************************************************************************************************
 											32x32 Register File
+								Hung's has 3rd read port, ommitting that for now
 ***********************************************************************************************************/
 module regfile
 
@@ -39,10 +40,10 @@ endmodule
 										Parameterized No-Enable Register
 ***********************************************************************************************************/
 
-module d_reg #(parameter WIDTH=8)
+module d_reg #(parameter WIDTH=32)
 
 (	input 					clock, reset,
-	input  		[WIDTH-1:0] d
+	input  		[WIDTH-1:0] d,
 	output  reg [WIDTH-1:0]	q    		);
 
 	always @ (posedge clock, posedge reset) begin
@@ -62,42 +63,41 @@ module mux2 #(parameter WIDTH=32)
 	input 					sel,
 	output 	[WIDTH-1:0]		y    );
 
-	assign y = sel ? a : b;
+	assign y = sel ? b : a;
 
 endmodule
 
 /***********************************************************************************************************
 												4-to-1 Mux
+												Not Used
 ***********************************************************************************************************/
 
-module mux4 #(parameter WIDTH=32)
+// module mux4 #(parameter WIDTH=32)
 
-(	input 		[WIDTH-1:0] 	a, b, c, d,
-	input 		[1:0]			sel,
-	output reg	[WIDTH-1:0]		y    				);
+// (	input 		[WIDTH-1:0] 	a, b, c, d,
+// 	input 		[1:0]			sel,
+// 	output reg	[WIDTH-1:0]		y    				);
 
-	always @* begin
-		case(sel)
-			0: y = a;
-			1: y = b;
-			2: y = c;
-			3: y = d;
-		endcase
-	end
+// 	always @* begin
+// 		case(sel)
+// 			0: y = a;
+// 			1: y = b;
+// 			2: y = c;
+// 			3: y = d;
+// 		endcase
+// 	end
 	
-endmodule
+// endmodule
 
 /***********************************************************************************************************
 													ALU
-								Operations: ADD, SUB, AND, OR, XOR, NAND, NOR
-												Need to change
 ***********************************************************************************************************/
 
 module alu
 
 (	input 		[31:0] 	a, b,
 	input 		[2:0] 	sel,
-	output reg	[31:0]	y
+	output reg	[31:0]	y,
 	output 				zero 	);
 
 	wire [31:0]	b2, sum, slt;

@@ -9,16 +9,18 @@
 module datapath
 
 (	input 			clock, reset,
-	input 			sel_result, sel_pc, sel_alu_b, sel_wa, we, sel_jump,
+	input 			sel_result, sel_pc, sel_alu_b, sel_wa, rf_we, sel_jump,
 	input	[2:0]	alu_ctrl,
 	input	[31:0]	instruction,
 	input	[31:0]	rd,
-	input	[4:0]	disp_sel,
-	output	[31:0]	pc, alu_out, dmem_wd, disp_dat,
-	output			zero												);
+	// input	[4:0]	disp_sel,
+	// output 	[31:0] 	disp_dat,
+	output	[31:0]	pc, alu_out, dmem_wd,
+	output			zero													);
 
 	wire 	[4:0]	wa, ra0, ra1, wa0, wa1;
-	wire 	[31:0]	pc_next, pc_next_br, pc_plus4, pc_branch, sign, sign_imm, sign_imm_sh, alu_a, alu_b, rf_wd;
+	wire 	[15:0]	sign;
+	wire 	[31:0]	pc_next, pc_next_br, pc_plus4, pc_branch, sign_imm, sign_imm_sh, alu_a, alu_b, rf_wd;
 
 	assign ra0  = instruction[25:21];
 	assign ra1  = instruction[20:16];
@@ -31,25 +33,24 @@ module datapath
 
 	/* REGFILE LOGIC BLOCKS */
 
-	regfile 	RF 			( .clock(clock), .we(we), .wa(wa), .ra0(ra0), .ra1(ra1), .wd(rf_wd), .rd0(alu_a), .rd1(dmem_wd) );
+	regfile 	RF 			( .clock(clock), .we(rf_we), .wa(wa), .ra0(ra0), .ra1(ra1), .wd(rf_wd), .rd0(alu_a), .rd1(dmem_wd) );
 	sign_extend S_EXT 		( .a(sign), .y(sign_imm) );
-	mux2 		MUX_WA 		( .a(wa0), .b(wa1), .sel(sel_wa), .y(wa) ); // chooses which is the write address
-	mux2 		MUX_ALU_B 	( .a(dmem_wd), .b(sign_imm), .sel(sel_alu_b), .y(alu_b) ); // chooses which is alu_b
-
+	mux2 #(5)	MUX_WA 		( .a(wa0), .b(wa1), .sel(sel_wa), .y(wa) ); // chooses which is the write address
+	mux2 		MUX_RESULT	( .a(alu_out), .b(rd), .sel(sel_result), .y(rf_wd) ); // chooses alu or dmem to rf_wd
 
 	/* PC LOGIC BLOCKS */
 
 	d_reg 		PC  		( .clock(clock), .reset(reset), .d(pc_next), .q(pc) );
-	sl2 		SL2 		( .a(sign_imm), .y(sign_imm_sh) ); 						// why is it called sign_imm?
-	adder 		ADD4 		( .a(pc), .b(32'd4), .y(pc_plus4) );
-	adder 		ADD_BRANCH	( .a(pc_plus4), .b(sign_imm_sh), .y(pc_branch) 	);
-	mux2 		MUX_PC 		( .a(pc_plus4), .b(pc_branch), .sel(sel_pc), .y(pc_next_br) ); // chooses branch or pc+4
+	sl2 		SL_2 		( .a(sign_imm), .y(sign_imm_sh) ); 						// why is it called sign_imm?
+	adder 		ADD_4 		( .a(pc), .b(32'b100), .y(pc_plus4) );
+	adder 		ADD_BRANCH	( .a(pc_plus4), .b(sign_imm_sh), .y(pc_branch) );
+	mux2 		MUX_BRANCH	( .a(pc_plus4), .b(pc_branch), .sel(sel_pc), .y(pc_next_br) ); // chooses branch or pc+4
 	mux2 		MUX_PC 		( .a(pc_next_br), .b(jump_addr), .sel(sel_jump), .y(pc_next) ); // choose branch or jump
 
 	/* ALU LOGIC BLOCKS */
 
 	alu 		ALU 		( .a(alu_a), .b(alu_b), .sel(alu_ctrl), .y(alu_out), .zero(zero) );
-	mux2 		MUX_RESULT	( .a(alu_out), .b(rd), .sel(sel_result), .y(rf_wd) ); // chooses alu or dmem to rf_wd
+	mux2 		MUX_ALU_B 	( .a(dmem_wd), .b(sign_imm), .sel(sel_alu_b), .y(alu_b) ); // chooses which is alu_b
 
 endmodule
 
@@ -61,7 +62,7 @@ sel_pc: 		mux select to choose whether pc+4 or pc+branch goes back to the PC reg
 sel_alu_b: 		mux select to choose whether rd2 or sign_imm goes into port2(src_b) of the ALU
 sel_wa: 		mux select to choose whether instruction[20:16] or instruction[15:11] is the write register address
 				depending on instruction type the end register could be in either position
-we: 			write enable for register file
+rf_we: 			write enable for register file
 sel_jump: 		mux select to choose whether pc jumps or branches
 alu_ctrl:		control signal for the ALU
 instruction:	output from the imem, gets decoded and goes into the CU, RF, and sign_extend

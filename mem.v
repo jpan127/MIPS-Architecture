@@ -18,7 +18,7 @@ module imem
 	reg	[31:0] rom [63:0];
 	
 	initial begin
-		$readmemh("memfile_s.dat", rom);
+		$readmemh("memfile.dat", rom);
 	end
 	
     assign y = rom[a];
@@ -38,11 +38,11 @@ module dmem
 	reg	[31:0] ram [63:0];
 	integer	i;
 	
-	initial begin
-		for (i=0; i<64; i=i+1) begin
-			ram[i] = 8'hFF;
-		end
-	end
+	// initial begin
+	// 	for (i=0; i<64; i=i+1) begin
+	// 		ram[i] = 8'hFF;
+	// 	end
+	// end
 				
 	always @(posedge clock) begin
 		if (we) begin
