@@ -25,7 +25,7 @@ module regfile
 		for (i=0; i<32; i=i+1) begin
 			rf[i] = 0;
 		end
-		rf[29] = 32'h200; // R[$sp], not sure why
+		rf[29] = 32'h200;
 	end
 
 	always @ (posedge clock) begin
@@ -62,7 +62,7 @@ module d_en_reg #(parameter WIDTH=32)
 
 (	input 					clock, reset, enable,
 	input  		[WIDTH-1:0] d,
-	output  reg [WIDTH-1:0]	q    		);
+	output  reg [WIDTH-1:0]	q    				);
 
 	always @ (posedge clock, posedge reset) begin
 		if (reset)  	 q <= 0;
@@ -149,7 +149,8 @@ module alu
 			4'd6: y = (a < b) ? 1 : 0;
 
 			4'd7: {d_hi, d_lo} = a * b;
-			4'd8: begin
+			4'd8: 
+			begin
 				d_hi = a / b;
 				d_lo = a - (b * d_hi);
 			end
@@ -198,7 +199,7 @@ endmodule
 module sl2
 
 (	input  [31:0] 	a,
-	output [31:0]	y    	);
+	output [31:0]	y	);
 
 	assign y = {a[29:0], 2'b00};
 	

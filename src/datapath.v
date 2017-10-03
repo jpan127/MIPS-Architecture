@@ -17,46 +17,130 @@ module datapath
 	// input	[4:0]	disp_sel,
 	// output 	[31:0] 	disp_dat,
 	output	[31:0]	pc, alu_out, dmem_wd,
-	output			zero													);
+	output			zero						);
 
 	wire 	[4:0]	wa, ra0, ra1, wa0, wa1;
 	wire 	[15:0]	sign;
 	wire 	[31:0]	pc_next, pc_next_br, pc_plus4, pc_branch, sign_imm, sign_imm_sh, alu_a, alu_b, result;
+	wire 	[31:0]	jump_addr;
 
 	assign ra0  = instruction[25:21];
 	assign ra1  = instruction[20:16];
 	assign wa0  = instruction[20:16];
 	assign wa1  = instruction[15:11];
 	assign sign = instruction[15:0];
+	// mips instructions always have lower 2 bits zero
+	assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
 
-	wire 	[31:0]	jump_addr;
-	assign jump_addr = {pc_plus4[31:28], instruction[25:0], 2'b00};	// mips instructions always have lower 2 bits zero
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// REGFILE LOGIC BLOCKS
 
-	/* REGFILE LOGIC BLOCKS */
+	regfile RF 	
+	( 
+		.clock(clock), 
+		.we(rf_we), 
+		.wa(wa), 
+		.ra0(ra0), 
+		.ra1(ra1), 
+		.wd(result), 
+		.rd0(alu_a), 
+		.rd1(dmem_wd)
+	);
 
-	regfile 	RF 			( .clock(clock), .we(rf_we), .wa(wa), .ra0(ra0), .ra1(ra1), .wd(result), .rd0(alu_a), .rd1(dmem_wd) );
-	sign_extend S_EXT 		( .a(sign), .y(sign_imm) );
-	mux4 #(5)	MUX_WA 		( .a(wa0), .b(wa1), .c(5'd31), .d(5'd0), .sel(sel_wa), .y(wa) ); // chooses which is the write address
-	mux4 		MUX_RESULT	( .a(rd), .b(alu_out), .c(pc_plus4), .d(32'b0), .sel(sel_result), .y(result) );
+	sign_extend S_EXT 
+	( 
+		.a(sign), 
+		.y(sign_imm) 
+	);
 
-	/* PC LOGIC BLOCKS */
+	// chooses which is the write address
+	mux4 #(5) MUX_WA	
+	( 
+		.a(wa0), 
+		.b(wa1), 
+		.c(5'd31), 
+		.d(5'd0), 
+		.sel(sel_wa), 
+		.y(wa)
+	);
 
-	d_reg 		PC  		( .clock(clock), .reset(reset), .d(pc_next), .q(pc) );
-	sl2 		SL_2 		( .a(sign_imm), .y(sign_imm_sh) ); 						// why is it called sign_imm?
-	adder 		ADD_4 		( .a(pc), .b(32'b100), .y(pc_plus4) );
-	adder 		ADD_BRANCH	( .a(pc_plus4), .b(sign_imm_sh), .y(pc_branch) );
-	// mux2 		MUX_BRANCH	( .a(pc_branch), .b(pc_plus4), .sel(sel_pc), .y(pc_next_br) ); // chooses branch or pc+4
-	// mux2 		MUX_PC 		( .a(jump_addr), .b(pc_next_br), .sel(sel_jump), .y(pc_next) ); // choose branch or jump
-	mux4		MUX_PC		( .a(pc_plus4), .b(pc_branch), .c(jump_addr), .d(result), .sel(sel_pc), .y(pc_next) );
+	mux4 MUX_RESULT
+	( 
+		.a(rd), 
+		.b(alu_out), 
+		.c(pc_plus4), 
+		.d(32'b0), 
+		.sel(sel_result), 
+		.y(result) 
+	);
 
-	/* ALU LOGIC BLOCKS */
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// PC LOGIC BLOCKS
 
-	alu 		ALU 		( .clock(clock), .reset(reset), .a(alu_a), .b(alu_b), .sel(alu_ctrl), .y(alu_out), .zero(zero) );
-	mux2 		MUX_ALU_B 	( .a(dmem_wd), .b(sign_imm), .sel(sel_alu_b), .y(alu_b) ); // chooses which is alu_b
+	d_reg PC
+	( 
+		.clock(clock), 
+		.reset(reset), 
+		.d(pc_next), 
+		.q(pc)
+	);
+
+	sl2 SL_2
+	( 
+		.a(sign_imm), 
+		.y(sign_imm_sh)
+	);
+
+	adder ADD_4
+	( 
+		.a(pc), 
+		.b(32'b100), 
+		.y(pc_plus4)
+	);
+
+	adder ADD_BRANCH
+	( 
+		.a(pc_plus4), 
+		.b(sign_imm_sh), 
+		.y(pc_branch)
+	);
+	
+	mux4 MUX_PC
+	( 
+		.a(pc_plus4), 
+		.b(pc_branch), 
+		.c(jump_addr), 
+		.d(result), 
+		.sel(sel_pc), 
+		.y(pc_next)
+	);
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+	// ALU LOGIC BLOCKS
+
+	alu ALU
+	( 
+		.clock(clock), 
+		.reset(reset), 
+		.a(alu_a), 
+		.b(alu_b), 
+		.sel(alu_ctrl), 
+		.y(alu_out), 
+		.zero(zero)
+	);
+
+	// Chooses which is alu_b
+	mux2 MUX_ALU_B
+	( 
+		.a(dmem_wd), 
+		.b(sign_imm), 
+		.sel(sel_alu_b), 
+		.y(alu_b) 
+	);
 
 endmodule
 
-/***********************************************************************************************************
+/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 												Ports Explanation
 
 sel_result: 	mux select to choose whether the ALU output or the dmem output goes back to RF
@@ -87,4 +171,4 @@ sign_imm_sh:	sign_imm shift left by 2
 alu_a:			ALU port 1
 alu_b:			ALU port 2
 result:			data to be written back to RF
-***********************************************************************************************************/
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/

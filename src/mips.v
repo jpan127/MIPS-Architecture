@@ -22,7 +22,8 @@ module mips
 	assign opcode = instruction[31:26];
 	assign funct  = instruction[5:0];
 
-	control_unit CU (
+	control_unit CU 
+	(
 		.opcode(opcode),
 		.funct(funct),
 		.zero(zero),
@@ -35,7 +36,8 @@ module mips
 		.alu_ctrl(alu_ctrl)
 	);
 
-	datapath DP (
+	datapath DP 
+	(
 		.clock(clock),
 		.reset(reset),
 		.sel_result(sel_result),
