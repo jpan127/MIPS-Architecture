@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-import globals::*;
+import testbench_helpers::*;
 
 module tb_datapath;
 
@@ -57,11 +57,11 @@ module tb_datapath;
     // Mock instruction functions
     function void execute_lw(input instr);
         instruction = instr;
-        ctrl = LWc; 
+        ctrl        = testbench_lw_ctrl; 
     endfunction
     function void execute_sw(input instr);
         instruction = instr;
-        ctrl = SWc; 
+        ctrl        = testbench_sw_ctrl; 
     endfunction
     function void execute_addi(input immediate);
 
