@@ -41,7 +41,7 @@ module tb_control_unit;
     // I-Type { opcode, funct }
     localparam  LW      = { 6'h23, NO_FUNCT },
                 SW      = { 6'h2B, NO_FUNCT },
-                ADDI    = { 6'h0C, NO_FUNCT },
+                ADDI    = { 6'h08, NO_FUNCT },
                 J       = { 6'h02, NO_FUNCT },
                 JAL     = { 6'h03, NO_FUNCT },
                 BEQY    = { 6'h04, NO_FUNCT },
@@ -64,33 +64,45 @@ module tb_control_unit;
 
     // Testbench
     initial begin
+        $display("///////////////////////////////////////////////////////////////////////");
+        
+        // Load Word
         #10 { opcode, funct } = LW;
         #10 if (ctrl != LWc) 
             $display("[LW] Expected: %b Actual: %b", LWc, ctrl);
 
+        // Store Word
         #10 { opcode, funct } = SW;
         #10 if (ctrl != SWc) 
             $display("[SW] Expected: %b Actual: %b", SWc, ctrl);
 
+        // Add Immediate
         #10 { opcode, funct } = ADDI;
         #10 if (ctrl != ADDIc) 
             $display("[ADDI] Expected: %b Actual: %b", ADDIc, ctrl);
 
+        // Jump
         #10 { opcode, funct } = J;
         #10 if (ctrl != Jc) 
             $display("[J] Expected: %b Actual: %b", Jc, ctrl);
 
+        // Jump and Link
         #10 { opcode, funct } = JAL;
         #10 if (ctrl != JALc) 
             $display("[JAL] Expected: %b Actual: %b", JALc, ctrl);
 
+        // Branch if Equal, Not Equal
+        zero = 0;
+        #10 { opcode, funct } = BEQN;
+        #10 if (ctrl != BEQNc) 
+            $display("[BEQN] Expected: %b Actual: %b", BEQNc, ctrl);
+        // Branch if Equal, Equal
+        zero = 1;
         #10 { opcode, funct } = BEQY;
         #10 if (ctrl != BEQYc) 
             $display("[BEQY] Expected: %b Actual: %b", BEQYc, ctrl);
 
-        #10 { opcode, funct } = BEQN;
-        #10 if (ctrl != BEQNc) 
-            $display("[BEQN] Expected: %b Actual: %b", BEQNc, ctrl);
+        $display("///////////////////////////////////////////////////////////////////////");
         $stop;
     end
 

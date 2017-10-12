@@ -9,8 +9,6 @@ module mips
 
 (	input			clock, reset,
 	input 	[31:0]	instruction, rd,
-	// input	[4:0]	dispSel,
-	// output	[31:0]	dispDat,
 	output 			dmem_we,
 	output 	[31:0]	pc, alu_out, dmem_wd 	);
 
@@ -64,7 +62,8 @@ module top
 
 	wire [31:0] pc, instruction, rd;
 
-	mips MIPS (
+	mips MIPS 
+	(
 		.clock(clock), 
 		.reset(reset), 
 		.pc(pc), 
@@ -75,7 +74,19 @@ module top
 		.rd(rd)
 	);
 
-	imem IMEM ( .a(pc[7:2]), .y(instruction) );
-	dmem DMEM ( .clock(clock), .we(dmem_we), .ra(alu_out[9:0]), .wd(dmem_wd), .rd(rd) );
+	imem IMEM 
+	( 
+		.a(pc[7:2]), 
+		.y(instruction) 
+	);
+	
+	dmem DMEM 
+	( 
+		.clock(clock), 
+		.we(dmem_we), 
+		.ra(alu_out[9:0]), 
+		.wd(dmem_wd), 
+		.rd(rd) 
+	);
 
 endmodule

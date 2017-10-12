@@ -94,7 +94,7 @@ module datapath
 	adder ADD_4
 	( 
 		.a(pc), 
-		.b(32'b100), 
+		.b(32'b100),	// Forgot why...
 		.y(pc_plus4)
 	);
 
@@ -141,7 +141,7 @@ module datapath
 endmodule
 
 /*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-												Ports Explanation
+									Ports Explanation (NEEDS TO BE UPDATED)
 
 sel_result: 	mux select to choose whether the ALU output or the dmem output goes back to RF
 sel_pc: 		mux select to choose whether pc+4 or pc+branch goes back to the PC register
