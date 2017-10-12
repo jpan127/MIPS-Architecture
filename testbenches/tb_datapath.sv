@@ -27,6 +27,9 @@ module tb_datapath;
         } = ctrl;
     end
 
+    // Instructions To Test
+    localparam LW_0XFF_INTO_REG10 = { 6'h23, 5'd0, 5'd10, 16'hFF };
+    localparam SW_REG10_INTO_0XFF = { 6'h2b, 5'd0, 5'd10, 16'hFF };
 
     // DUT
     datapath DUT(.*);
