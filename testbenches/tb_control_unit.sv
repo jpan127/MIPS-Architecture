@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+// `include "globals.svh"
 
 module tb_control_unit;
 

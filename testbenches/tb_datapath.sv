@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
-import testbench_helpers::*;
 
 module tb_datapath;
+
+    import testbench_helpers::*;
 
     // DUT Ports
     reg         clock, reset, sel_alu_b, rf_we;
@@ -54,27 +55,27 @@ module tb_datapath;
     // Generate #10 period clock
     initial begin forever #5 clock = ~clock; end
 
-    // Mock instruction functions
-    function void execute_lw(input instr);
-        instruction = instr;
-        ctrl        = testbench_lw_ctrl; 
-    endfunction
-    function void execute_sw(input instr);
-        instruction = instr;
-        ctrl        = testbench_sw_ctrl; 
-    endfunction
-    function void execute_addi(input immediate);
+    // // Mock instruction functions
+    // function void execute_lw(input instr);
+    //     instruction = instr;
+    //     ctrl        = testbench_lw_ctrl; 
+    // endfunction
+    // function void execute_sw(input instr);
+    //     instruction = instr;
+    //     ctrl        = testbench_sw_ctrl; 
+    // endfunction
+    // function void execute_addi(input immediate);
 
-    endfunction
+    // endfunction
 
-    // Tasks to test mock instructions are working
-    task test_sw_and_lw(input sw_instr, lw_instr);
-        // Store a constant value 0 first, then load it back to check
-        execute_lw(sw_instr);
-        #10;
-        execute_sw(lw_instr);
-        #10;
-    endtask
+    // // Tasks to test mock instructions are working
+    // task test_sw_and_lw(input sw_instr, lw_instr);
+    //     // Store a constant value 0 first, then load it back to check
+    //     execute_lw(sw_instr);
+    //     #10;
+    //     execute_sw(lw_instr);
+    //     #10;
+    // endtask
 
     // Testbench
     initial begin

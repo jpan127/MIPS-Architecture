@@ -1,29 +1,14 @@
-
-// CU --> DP bus
-interface ControlBus;
-
-    dmem_we_t       dmem_we;
-    sel_alu_b_t     sel_alu_b;
-    rf_we_t         rf_we;
-    sel_pc_t        sel_pc;
-    sel_result_t    sel_result;
-    sel_wa_t        sel_wa;
-    alu_control_t   alu_ctrl;
-
-    modport ControlSignals
-    (
-        output  dmem_we,
-                sel_alu_b,
-                rf_we,
-                sel_pc,
-                sel_result,
-                sel_wa,
-                alu_ctrl
-    );
-
-endinterface
+`ifndef GLOBALS_SV
+`define GLOBALS_SV
 
 package global_types;
+
+    // Vectors
+    typedef logic [1:0] bit2;
+    typedef logic [3:0] bit4;
+    typedef logic [5:0] bit5;
+    typedef logic [15:0] bit16;
+    typedef logic [31:0] bit32;
 
     // Instruction types
     typedef struct
@@ -122,7 +107,7 @@ package global_types;
         MFHIac  = 4'd9,
         MFLOac  = 4'd10,
         JRac    = 4'd11
-    } alu_control_t;
+    } alu_ctrl_t;
 
     // Control signal for tb_datapath
     typedef struct
@@ -225,45 +210,45 @@ package testbench_helpers;
         return r;
     endfunction
 
-    // // Creates a control vector signal out of the inputs
-    // function testbench_ctrl_t create_testbench_ctrl();
-    //     input     rf_we,
-    //         [1:0] sel_wa, sel_alu_b, sel_result, sel_pc,
-    //         [3:0] alu_ctrl;
-    //     testbench_ctrl_t ctrl = '{ rf_we, sel_wa, sel_alu_b, sel_result, sel_pc, alu_ctrl };
-    //     return ctrl;
-    // endfunction
+    // Testbench control struct
+    typedef struct packed
+    {
+        rf_we_t      rf_we;    
+        sel_wa_t     sel_wa;    
+        sel_alu_b_t  sel_alu_b;
+        sel_result_t sel_result;
+        sel_pc_t     sel_pc;    
+        alu_ctrl_t   alu_ctrl;    
+    } testbench_control_t;
 
-    // // function decode_testbench_ctrl()
+    // Converts testbench_control_t into a 12-bit vector
+    function logic [11:0] decode_testbench_ctrl(input testbench_control_t c);
+        logic [11:0] vector =
+        {
+            logic '(c.rf_we),
+            logic '(c.sel_wa),
+            logic '(c.sel_alu_b),
+            logic '(c.sel_result),
+            logic '(c.sel_pc),
+            logic '(c.alu_ctrl)
+        };
+        return vector;
+    endfunction
 
-    // logic [11:0] testbench_lw_ctrl = create_testbench_ctrl(
-    //                                         RF_WE_ENABLE, 
-    //                                         SEL_WA_WA0, 
-    //                                         SEL_ALU_B_DMEM_WD, 
-    //                                         SEL_RESULT_RD, 
-    //                                         SEL_PC_PC_PLUS4, 
-    //                                         DONT_CAREac);
-    // logic [11:0] testbench_sw_ctrl = create_testbench_ctrl(
-    //                                         RF_WE_DISABLE, 
-    //                                         SEL_WA_WA0, 
-    //                                         SEL_ALU_B_SIGN_IMM, 
-    //                                         SEL_RESULT_ALU_OUT, 
-    //                                         SEL_PC_PC_PLUS4, 
-    //                                         DONT_CAREac);
-    // logic [11:0] testbench_addi_ctrl = create_testbench_ctrl(
-    //                                         RF_WE_ENABLE,
-    //                                         SEL_WA_WA0,
-    //                                         SEL_ALU_B_SIGN_IMM,
-    //                                         SEL_RESULT_ALU_OUT,
-    //                                         SEL_PC_PC_PLUS4,
-    //                                         ADDIac);
+    // All the controls to test
+    testbench_control_t
+    tb_LWc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_RD,      SEL_PC_PC_PLUS4, DONT_CAREac},
+    tb_SWc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, DONT_CAREac},
+    tb_ADDIc = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ADDIac};
 
 endpackage
 
+//// For control unit
 package control_signals;
 
     import global_types::*;
 
+    // Control unit control struct
     typedef struct packed
     {
         rf_we_t      rf_we;    
@@ -275,6 +260,7 @@ package control_signals;
         alu_op_t     alu_op;    
     } control_t;
 
+    // Control unit control signals for each instruction
     control_t
     // I-Type
     LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_RD,      SEL_PC_PC_PLUS4, ALU_OP_ADDI},
@@ -288,18 +274,56 @@ package control_signals;
     JRc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_RESULT,   ALU_OP_DONT_CARE},
     Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ALU_OP_DONT_CARE};
 
-    // Since the control_t is a struct of enums, they need to be broken down into bits for assignment
-    function decode_control(input control_t c);
-        return 
+    // Convert control_t into a 11-bit vector
+    function logic [10:0] decode_control(input control_t c);
+        logic [10:0] vector =
         {
-            c.rf_we_t,
-            c.sel_wa_t,
-            c.sel_alu_b_t,
-            c.dmem_we_t,
-            c.sel_result_t,
-            c.sel_pc_t,
-            c.alu_op_t
+            // Static cast uses parentheses
+            logic '( c.rf_we ),
+            logic '( c.sel_wa ),
+            logic '( c.sel_alu_b ),
+            logic '( c.dmem_we ),
+            logic '( c.sel_result ),
+            logic '( c.sel_pc ),
+            logic '( c.alu_op )
         };
+        return vector;
     endfunction
 
 endpackage
+
+// CU <--> DP bus
+interface ControlBus;
+
+    import global_types::*;
+
+    dmem_we_t       dmem_we;
+    sel_alu_b_t     sel_alu_b;
+    rf_we_t         rf_we;
+    sel_pc_t        sel_pc;
+    sel_result_t    sel_result;
+    sel_wa_t        sel_wa;
+    alu_ctrl_t      alu_ctrl;
+
+    modport ControlSignals
+    (
+        output  dmem_we,
+                sel_alu_b,
+                rf_we,
+                sel_pc,
+                sel_result,
+                sel_wa,
+                alu_ctrl
+    );
+
+    logic zero;
+
+    modport StatusSignals
+    (
+        input   zero
+    );
+
+endinterface
+
+
+`endif
