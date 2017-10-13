@@ -2,38 +2,26 @@
 
 module tb_control_unit;
 
+    import control_signals::*;
+
     // DUT ports
     reg [5:0]   opcode, funct;
     reg         zero;
-    wire        dmem_we, sel_alu_b, rf_we;
-    wire [1:0]  sel_pc, sel_result, sel_wa;
-    wire [3:0]  alu_ctrl;
+    ControlBus  control_bus;
 
     // Testbench variables
-    integer     i;
     reg         clock;
-    wire [8:0] ctrl;
+    wire [8:0]  ctrl;
 
     assign ctrl =
     {
-        rf_we,          // 1 bit
-        sel_wa,         // 2 bits
-        sel_alu_b,      // 1 bit
-        dmem_we,        // 1 bit
-        sel_result,     // 2 bits
-        sel_pc          // 2 bits
+        control_bus.rf_we,          // 1 bit
+        control_bus.sel_wa,         // 2 bits
+        control_bus.sel_alu_b,      // 1 bit
+        control_bus.dmem_we,        // 1 bit
+        control_bus.sel_result,     // 2 bits
+        control_bus.sel_pc          // 2 bits
     };
-
-    // Control signals
-    localparam  LWc     = 9'b1_00_1_0_00_00,
-                SWc     = 9'b0_00_1_1_01_00,
-                ADDIc   = 9'b1_00_1_0_01_00,
-                Jc      = 9'b0_00_0_0_01_10,
-                JALc    = 9'b1_10_0_0_10_10,
-                BEQYc   = 9'b0_00_0_0_01_01,
-                BEQNc   = 9'b0_00_0_0_01_00,
-                JRc     = 9'b0_00_0_0_01_11,
-                Rc      = 9'b1_01_0_0_01_00;
 
     // Instructions
     localparam  NO_FUNCT = 6'd0;
@@ -55,7 +43,6 @@ module tb_control_unit;
         opcode  = 0;
         funct   = 0;
         zero    = 0;
-        i       = 0;
         clock   = 0;
     end
 
