@@ -9,7 +9,7 @@ module control_unit
 
 (	input		[5:0] 	opcode, funct,
 	input 				zero,
-	ControlBus.ControlSignals	control_bus);
+	ControlBus			control_bus);
 
 	import global_types::*;
 	import control_signals::*;
@@ -17,7 +17,7 @@ module control_unit
 	// Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
 	wire [1:0] 	  alu_op;
 	reg  [10:0]	  ctrl;
-	alu_control_t alu_ctrl;
+	alu_ctrl_t	  alu_ctrl;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +29,7 @@ module control_unit
 		control_bus.dmem_we,		// 1 bit
 		control_bus.sel_result,		// 2 bits
 		control_bus.sel_pc,			// 2 bits
-		control_bus.alu_op			// 2 bits
+		alu_op						// 2 bits
 	} = ctrl;
 
 	always @* begin
@@ -68,7 +68,7 @@ module control_unit
 					6'b01_0000: control_bus.alu_ctrl = MFHIac;	// funct 10h = 16
 					6'b01_0010:	control_bus.alu_ctrl = MFLOac;	// funct 12h = 18
 					6'b00_1000: control_bus.alu_ctrl = JRac;	// funct 8h
-					default:    control_bus.alu_ctrl = 4'dx; 	// ???
+					default:    control_bus.alu_ctrl = DONT_CAREac; 	// ???
 				endcase
 		endcase
 	end

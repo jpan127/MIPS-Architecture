@@ -1,6 +1,9 @@
 `ifndef GLOBALS_SV
 `define GLOBALS_SV
 
+// Converting between types: works for structs, or enum >> int, vice versa
+// {>>{type2}} = type1
+
 package global_types;
 
     // Vectors
@@ -188,7 +191,7 @@ package global_types;
 endpackage
 
 
-package testbench_helpers;
+package testbench_globals;
 
     import global_types::*;
 
@@ -223,7 +226,8 @@ package testbench_helpers;
 
     // Converts testbench_control_t into a 12-bit vector
     function logic [11:0] decode_testbench_ctrl(input testbench_control_t c);
-        logic [11:0] vector =
+        logic [11:0] vector;
+        vector =
         {
             logic '(c.rf_we),
             logic '(c.sel_wa),
@@ -248,7 +252,7 @@ package control_signals;
 
     import global_types::*;
 
-    // Control unit control struct
+    // Control unit control struct (11 bits)
     typedef struct packed
     {
         rf_we_t      rf_we;    
@@ -276,7 +280,8 @@ package control_signals;
 
     // Convert control_t into a 11-bit vector
     function logic [10:0] decode_control(input control_t c);
-        logic [10:0] vector =
+        logic [10:0] vector;
+        vector =
         {
             // Static cast uses parentheses
             logic '( c.rf_we ),

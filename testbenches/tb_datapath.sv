@@ -2,7 +2,7 @@
 
 module tb_datapath;
 
-    import testbench_helpers::*;
+    import testbench_globals::*;
 
     // DUT Ports
     reg         clock, reset, sel_alu_b, rf_we;

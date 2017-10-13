@@ -1,14 +1,14 @@
 `timescale 1ns / 1ps
-// `include "globals.svh"
 
 module tb_control_unit;
 
+    import testbench_globals::*;
     import control_signals::*;
 
     // DUT ports
     reg [5:0]   opcode, funct;
     reg         zero;
-    ControlBus  control_bus;
+    ControlBus  control_bus();
 
     // Testbench variables
     reg         clock;
@@ -50,45 +50,45 @@ module tb_control_unit;
     // Generate #10 period clock
     initial begin forever #5 clock = ~clock; end
 
+    task test_instruction;
+        input logic [11:0]  instruction;
+        input control_t     control;
+        input string        name;
+
+        { opcode, funct } = instruction;
+        
+        // Need to shift the control signals right by 2 bits because we dont account for alu_op
+        #10 assert (ctrl == (control >> 2)) 
+            $display("[%s] SUCCESS", name);
+            else $error("[%s] FAILED Expected: %b Actual: %b", name, LWc, ctrl);
+    endtask
+
     // Testbench
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
         
         // Load Word
-        #10 { opcode, funct } = LW;
-        #10 if (ctrl != LWc) 
-            $display("[LW] Expected: %b Actual: %b", LWc, ctrl);
+        test_instruction(LW, LWc, "LW");
 
         // Store Word
-        #10 { opcode, funct } = SW;
-        #10 if (ctrl != SWc) 
-            $display("[SW] Expected: %b Actual: %b", SWc, ctrl);
+        test_instruction(SW, SWc, "SW");
 
         // Add Immediate
-        #10 { opcode, funct } = ADDI;
-        #10 if (ctrl != ADDIc) 
-            $display("[ADDI] Expected: %b Actual: %b", ADDIc, ctrl);
+        test_instruction(ADDI, ADDIc, "ADDI");
 
         // Jump
-        #10 { opcode, funct } = J;
-        #10 if (ctrl != Jc) 
-            $display("[J] Expected: %b Actual: %b", Jc, ctrl);
+        test_instruction(J, Jc, "J");
 
         // Jump and Link
-        #10 { opcode, funct } = JAL;
-        #10 if (ctrl != JALc) 
-            $display("[JAL] Expected: %b Actual: %b", JALc, ctrl);
+        test_instruction(JAL, JALc, "JAL");
 
         // Branch if Equal, Not Equal
         zero = 0;
-        #10 { opcode, funct } = BEQN;
-        #10 if (ctrl != BEQNc) 
-            $display("[BEQN] Expected: %b Actual: %b", BEQNc, ctrl);
+        test_instruction(BEQN, BEQNc, "BEQN");
+
         // Branch if Equal, Equal
         zero = 1;
-        #10 { opcode, funct } = BEQY;
-        #10 if (ctrl != BEQYc) 
-            $display("[BEQY] Expected: %b Actual: %b", BEQYc, ctrl);
+        test_instruction(BEQY, BEQYc, "BEQY");
 
         $display("///////////////////////////////////////////////////////////////////////");
         $stop;
