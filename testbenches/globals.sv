@@ -13,6 +13,12 @@ package global_types;
     typedef logic [15:0] bit16;
     typedef logic [31:0] bit32;
 
+    // Constants
+    const localparam [4:0]  REG_RA   = 'd31;
+    const localparam [4:0]  REG_ZERO = 'd0;
+    const localparam [4:0]  REG_SP   = 'd29;
+    const localparam [31:0] ZERO32   = 'd0;
+
     // Instruction types
     typedef struct
     {
@@ -123,9 +129,9 @@ package global_types;
         logic [3:0] alu_ctrl;
     } testbench_ctrl_t;
 
-    typedef enum logic [7:0]
+    typedef enum logic [5:0]
     {
-        OPCODE_R        = 8'h00,
+        OPCODE_R        = 'h00,
         // OPCODE_ADD      = 8'h00,
         // OPCODE_ADDU     = 8'h00,
         // OPCODE_AND      = 8'h00,
@@ -145,47 +151,47 @@ package global_types;
         // OPCODE_SRA      = 8'h00,
         // OPCODE_SLT      = 8'h00,
         // OPCODE_JR       = 8'h00,
-        OPCODE_ADDI     = 8'h08,
-        OPCODE_ADDIU    = 8'h09,
-        OPCODE_ANDI     = 8'h0C,
-        OPCODE_BEQ      = 8'h04,
-        OPCODE_BNE      = 8'h05,
-        OPCODE_J        = 8'h02,
-        OPCODE_JAL      = 8'h03,
-        OPCODE_LBU      = 8'h24,
-        OPCODE_LHU      = 8'h25,
-        OPCODE_LL       = 8'h30,
-        OPCODE_LUI      = 8'h0F,
-        OPCODE_LW       = 8'h23,
-        OPCODE_ORI      = 8'h0D,
-        OPCODE_SLTI     = 8'h0A,
-        OPCODE_SLTIU    = 8'h0B,
-        OPCODE_SB       = 8'h28,
-        OPCODE_SC       = 8'h38,
-        OPCODE_SW       = 8'h2b
+        OPCODE_ADDI     = 'h08,
+        OPCODE_ADDIU    = 'h09,
+        OPCODE_ANDI     = 'h0C,
+        OPCODE_BEQ      = 'h04,
+        OPCODE_BNE      = 'h05,
+        OPCODE_J        = 'h02,
+        OPCODE_JAL      = 'h03,
+        OPCODE_LBU      = 'h24,
+        OPCODE_LHU      = 'h25,
+        OPCODE_LL       = 'h30,
+        OPCODE_LUI      = 'h0F,
+        OPCODE_LW       = 'h23,
+        OPCODE_ORI      = 'h0D,
+        OPCODE_SLTI     = 'h0A,
+        OPCODE_SLTIU    = 'h0B,
+        OPCODE_SB       = 'h28,
+        OPCODE_SC       = 'h38,
+        OPCODE_SW       = 'h2b
     } opcode_t;
 
-    typedef enum logic [7:0]
+    typedef enum logic [5:0]
     {
-        FUNCT_ADD       = 8'h20,
-        FUNCT_ADDU      = 8'h21,
-        FUNCT_AND       = 8'h24,
-        FUNCT_JR        = 8'h08,
-        FUNCT_NOR       = 8'h27,
-        FUNCT_OR        = 8'h25,
-        FUNCT_SLT       = 8'h2A,
-        FUNCT_SLTU      = 8'h2b,
-        FUNCT_SLL       = 8'h00,
-        FUNCT_SRL       = 8'h02,
-        FUNCT_SUB       = 8'h22,
-        FUNCT_SUBU      = 8'h23,
-        FUNCT_DIV       = 8'h1A,
-        FUNCT_DIVU      = 8'h1B,
-        FUNCT_MFHI      = 8'h10,
-        FUNCT_MFLO      = 8'h12,
-        FUNCT_MULT      = 8'h18,
-        FUNCT_MULTU     = 8'h19,
-        FUNCT_SRA       = 8'h03
+        FUNCT_ADD       = 'h20,
+        FUNCT_ADDU      = 'h21,
+        FUNCT_AND       = 'h24,
+        FUNCT_JR        = 'h08,
+        FUNCT_NOR       = 'h27,
+        FUNCT_OR        = 'h25,
+        FUNCT_SLT       = 'h2A,
+        FUNCT_SLTU      = 'h2b,
+        FUNCT_SLL       = 'h00,
+        FUNCT_SRL       = 'h02,
+        FUNCT_SUB       = 'h22,
+        FUNCT_SUBU      = 'h23,
+        FUNCT_DIV       = 'h1A,
+        FUNCT_DIVU      = 'h1B,
+        FUNCT_MFHI      = 'h10,
+        FUNCT_MFLO      = 'h12,
+        FUNCT_MULT      = 'h18,
+        FUNCT_MULTU     = 'h19,
+        FUNCT_SRA       = 'h03
     } funct_t;
 
 endpackage
@@ -297,32 +303,60 @@ package control_signals;
 
 endpackage
 
+package global_functions;
+
+    // Adds 2 32-bit numbers
+    function logic [31:0] add(input logic[31:0] a, b);
+        add = a + b;
+    endfunction
+
+    // Shifts a number to the left by 2-bits
+    function logic [31:0] shift_left_2(input logic[31:0] a);
+        shift_left_2 = { a[29:0], 2'b00 };
+    endfunction
+
+    // Extend the sign 16-bits
+    function logic [31:0] sign_extend(input logic[15:0] a);
+        sign_extend = { { 16{a[15]} }, a[14:0] };
+    endfunction
+
+endpackage
+
+
 // CU <--> DP bus
 interface ControlBus;
 
     import global_types::*;
 
-    dmem_we_t       dmem_we;
-    sel_alu_b_t     sel_alu_b;
+    alu_ctrl_t      alu_ctrl;
     rf_we_t         rf_we;
+    sel_alu_b_t     sel_alu_b;
     sel_pc_t        sel_pc;
     sel_result_t    sel_result;
     sel_wa_t        sel_wa;
-    alu_ctrl_t      alu_ctrl;
+    dmem_we_t       dmem_we;
+    logic           zero;
 
-    modport ControlSignals
+    // Input to control_unit
+    modport ExternalSignals
     (
-        output  dmem_we,
-                sel_alu_b,
-                rf_we,
-                sel_pc,
-                sel_result,
-                sel_wa,
-                alu_ctrl
+        input   dmem_we
     );
 
-    logic zero;
+    // Output from control_unit
+    // Input to datapath
+    modport ControlSignals
+    (
+        inout   alu_ctrl,
+                rf_we,
+                sel_alu_b,
+                sel_pc,
+                sel_result,
+                sel_wa
+    );
 
+    // Input to control_unit
+    // Output to datapath
     modport StatusSignals
     (
         input   zero

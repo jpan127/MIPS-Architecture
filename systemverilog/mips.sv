@@ -28,26 +28,23 @@ module mips
 	(
 		.opcode(opcode),
 		.funct(funct),
-		.zero(zero),
-		.control_bus(control_bus.ControlSignals)
+		.control_bus(control_bus)
+		.control_bus_external(control_bus.control_bus_external),
+		.control_bus_control(control_bus.control_bus_control),
+		.control_bus_status(control_bus.control_bus_status)
 	);
 
 	datapath DP 
 	(
 		.clock(clock),
 		.reset(reset),
-		.sel_result(sel_result),
-		.sel_pc(sel_pc),
-		.sel_alu_b(sel_alu_b),
-		.sel_wa(sel_wa),
-		.rf_we(rf_we),
-		.alu_ctrl(alu_ctrl),
 		.instruction(instruction),
 		.rd(rd),
 		.pc(pc),
 		.alu_out(alu_out),
 		.dmem_wd(dmem_wd),
-		.zero(zero)
+		.control_bus_control(control_bus.control_bus_control),
+		.control_bus_status(control_bus.control_bus_status)
 	);
 
 endmodule
@@ -74,8 +71,8 @@ module top
 
 	imem IMEM 
 	( 
-		.a(pc[7:2]), 
-		.y(instruction) 
+		.addr(pc[7:2]), 
+		.data(instruction) 
 	);
 	
 	dmem DMEM 

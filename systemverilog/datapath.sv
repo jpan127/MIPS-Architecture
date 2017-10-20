@@ -9,15 +9,14 @@
 module datapath
 
 (	input 			clock, reset,
-	input 			sel_alu_b, rf_we,
-	input	[1:0]	sel_pc, sel_result, sel_wa,
-	input	[3:0]	alu_ctrl,
 	input	[31:0]	instruction,
 	input	[31:0]	rd,
-	// input	[4:0]	disp_sel,
-	// output 	[31:0] 	disp_dat,
 	output	[31:0]	pc, alu_out, dmem_wd,
-	output			zero						);
+	ControlBus.ControlSignals control_bus_control,
+	ControlBus.StatusSignals control_bus_status		);
+
+	import global_types::*;
+	import global_functions::*;
 
 	wire 	[4:0]	wa, ra0, ra1, wa0, wa1;
 	wire 	[15:0]	sign;
@@ -29,7 +28,7 @@ module datapath
 	assign wa0  = instruction[20:16];
 	assign wa1  = instruction[15:11];
 	assign sign = instruction[15:0];
-	// mips instructions always have lower 2 bits zero
+	// mips instructions always have lower 2 bits zero, word aligned
 	assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,29 +46,31 @@ module datapath
 		.rd1(dmem_wd)
 	);
 
-	sign_extend S_EXT 
-	( 
-		.a(sign), 
-		.y(sign_imm) 
-	);
+	assign sign_imm = sign_extend(sign);
+
+	// sign_extend S_EXT 
+	// ( 
+	// 	.a(sign), 
+	// 	.y(sign_imm) 
+	// );
 
 	// chooses which is the write address
 	mux4 #(5) MUX_WA	
 	( 
 		.a(wa0), 
 		.b(wa1), 
-		.c(5'd31), 
-		.d(5'd0), 
+		.c(REG_RA), 
+		.d(REG_ZERO), 
 		.sel(sel_wa), 
 		.y(wa)
 	);
 
-	mux4 MUX_RESULT
+	mux4 #(32) MUX_RESULT
 	( 
 		.a(rd), 
 		.b(alu_out), 
 		.c(pc_plus4), 
-		.d(32'b0), 
+		.d(ZERO32), 
 		.sel(sel_result), 
 		.y(result) 
 	);
@@ -85,27 +86,33 @@ module datapath
 		.q(pc)
 	);
 
-	sl2 SL_2
-	( 
-		.a(sign_imm), 
-		.y(sign_imm_sh)
-	);
+	assign sign_imm_sh = shift_left_2(sign_imm);
 
-	adder ADD_4
-	( 
-		.a(pc), 
-		.b(32'b100),	// Forgot why...
-		.y(pc_plus4)
-	);
+	// sl2 SL_2
+	// ( 
+	// 	.a(sign_imm), 
+	// 	.y(sign_imm_sh)
+	// );
 
-	adder ADD_BRANCH
-	( 
-		.a(pc_plus4), 
-		.b(sign_imm_sh), 
-		.y(pc_branch)
-	);
+	assign pc_plus4 = add(pc, 32'h256);
+
+	// adder ADD_4
+	// ( 
+	// 	.a(pc), 
+	// 	.b(32'b100),	// Forgot why...256
+	// 	.y(pc_plus4)
+	// );
+
+	assign pc_branch = add(pc_plus4, sign_imm_sh);
+
+	// adder ADD_BRANCH
+	// ( 
+	// 	.a(pc_plus4), 
+	// 	.b(sign_imm_sh), 
+	// 	.y(pc_branch)
+	// );
 	
-	mux4 MUX_PC
+	mux4 #(32) MUX_PC
 	( 
 		.a(pc_plus4), 
 		.b(pc_branch), 

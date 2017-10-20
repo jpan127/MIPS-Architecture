@@ -2,6 +2,19 @@
 
 Designing a 32-bit single cycle MIPS architecture in Verilog.
 
-# Future Scope
+## Instruction Set
 
-Implementing a 5-stage pipelined architecture.
+ADD
+ADDI
+AND
+BEQJ
+JR
+JAL
+LW
+MFI
+MFLO
+MULTU
+OR
+SLT
+SUB
+SW

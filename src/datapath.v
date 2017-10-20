@@ -14,8 +14,6 @@ module datapath
 	input	[3:0]	alu_ctrl,
 	input	[31:0]	instruction,
 	input	[31:0]	rd,
-	// input	[4:0]	disp_sel,
-	// output 	[31:0] 	disp_dat,
 	output	[31:0]	pc, alu_out, dmem_wd,
 	output			zero						);
 
