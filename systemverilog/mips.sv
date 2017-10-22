@@ -22,13 +22,14 @@ module mips
 	assign opcode = instruction[31:26];
 	assign funct  = instruction[5:0];
 
+	// Internal bus between control unit and datapath
 	ControlBus control_bus();
+	assign dmem_we = control_bus.ExternalSignals.dmem_we;
 
 	control_unit CU 
 	(
 		.opcode(opcode),
 		.funct(funct),
-		.control_bus(control_bus)
 		.control_bus_external(control_bus.control_bus_external),
 		.control_bus_control(control_bus.control_bus_control),
 		.control_bus_status(control_bus.control_bus_status)
@@ -71,7 +72,7 @@ module top
 
 	imem IMEM 
 	( 
-		.addr(pc[7:2]), 
+		.addr(pc[11:2]),		// 10 bits for 1024 spots
 		.data(instruction) 
 	);
 	
@@ -79,7 +80,7 @@ module top
 	( 
 		.clock(clock), 
 		.we(dmem_we), 
-		.ra(alu_out[9:0]), 
+		.addr(alu_out[9:0]), 
 		.wd(dmem_wd), 
 		.rd(rd) 
 	);

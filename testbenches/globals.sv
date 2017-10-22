@@ -4,45 +4,83 @@
 // Converting between types: works for structs, or enum >> int, vice versa
 // {>>{type2}} = type1
 
+//// Global typedefs, enums, etc
 package global_types;
 
     // Vectors
-    typedef logic [1:0] bit2;
-    typedef logic [3:0] bit4;
-    typedef logic [5:0] bit5;
-    typedef logic [15:0] bit16;
-    typedef logic [31:0] bit32;
+    typedef logic [1:0]  logic2;
+    typedef logic [3:0]  logic4;
+    typedef logic [4:0]  logic5;
+    typedef logic [5:0]  logic6;
+    typedef logic [15:0] logic16;
+    typedef logic [31:0] logic32;
 
     // Constants
-    const localparam [4:0]  REG_RA   = 'd31;
-    const localparam [4:0]  REG_ZERO = 'd0;
-    const localparam [4:0]  REG_SP   = 'd29;
-    const localparam [31:0] ZERO32   = 'd0;
+    localparam logic32  ZERO32 = 'd0,
+                        UNUSED = 'd0;
+
+    localparam logic5   REG_ZERO = 'd0,
+                        REG_1    = 'd1,
+                        REG_2    = 'd2,
+                        REG_3    = 'd3,
+                        REG_4    = 'd4,
+                        REG_5    = 'd5,
+                        REG_6    = 'd6,
+                        REG_7    = 'd7,
+                        REG_8    = 'd8,
+                        REG_9    = 'd9,
+                        REG_10   = 'd10,
+                        REG_11   = 'd11,
+                        REG_12   = 'd12,
+                        REG_13   = 'd13,
+                        REG_14   = 'd14,
+                        REG_15   = 'd15,
+                        REG_16   = 'd16,
+                        REG_17   = 'd17,
+                        REG_18   = 'd18,
+                        REG_19   = 'd19,
+                        REG_20   = 'd20,
+                        REG_21   = 'd21,
+                        REG_22   = 'd22,
+                        REG_23   = 'd23,
+                        REG_24   = 'd24,
+                        REG_25   = 'd25,
+                        REG_26   = 'd26,
+                        REG_27   = 'd27,
+                        REG_28   = 'd28,
+                        REG_29   = 'd29,
+                        REG_SP   = 'd29,
+                        REG_30   = 'd30,
+                        REG_RA   = 'd31;
 
     // Instruction types
     typedef struct
     {
-        reg [5:0] opcode;
-        reg [4:0] rs;
-        reg [4:0] rt;
-        reg [15:0] immediate;
+        logic [5:0] opcode;
+        logic [4:0] rs;
+        logic [4:0] rt;
+        logic [15:0] immediate;
     } i_instruction_t;
 
     typedef struct
     {
-        reg [5:0]  opcode;
-        reg [25:0] address;
+        logic [5:0]  opcode;
+        logic [25:0] address;
     } j_instruction_t;
 
     typedef struct
     {
-        reg [5:0] opcode;
-        reg [4:0] rs;
-        reg [4:0] rt;
-        reg [4:0] rd;
-        reg [5:0] shamt;
-        reg [5:0] funct;
+        logic [5:0] opcode;
+        logic [4:0] rs;
+        logic [4:0] rt;
+        logic [4:0] rd;
+        logic [5:0] shamt;
+        logic [5:0] funct;
     } r_instruction_t;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                              Control Signal Enumerations                                  //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Control fields, dont_care are when the field does not matter because they are irrelevant to the instruction's path
     typedef enum logic
@@ -95,62 +133,52 @@ package global_types;
 
     typedef enum logic [1:0]
     {
-        ALU_OP_ADDI         = 2'b00,
-        ALU_OP_SUBI         = 2'b01,
-        ALU_OP_DONT_CARE    = 2'b11
+        ALU_OP_DONT_CARE = 2'bZ,
+        ALU_OP_ADDI      = 2'b00,
+        ALU_OP_SUBI      = 2'b01,
+        ALU_OP_R         = 2'b11     // Does not matter because R-Type instructions only look at funct
     } alu_op_t;
 
     // ALU control signals
     typedef enum logic [3:0]
     {
         DONT_CAREac = 4'dZ,
-        ADDIac  = 4'd0,
-        SUBIac  = 4'd1,
-        ADDac   = 4'd2,
-        SUBac   = 4'd3,
-        ANDac   = 4'd4,
-        ORac    = 4'd5,
-        SLTac   = 4'd6,
-        MULTUac = 4'd7,
-        DIVUac  = 4'd8,
-        MFHIac  = 4'd9,
-        MFLOac  = 4'd10,
-        JRac    = 4'd11
+        ADDIac      = 4'd0,
+        SUBIac      = 4'd1,
+        ADDac       = 4'd2,
+        SUBac       = 4'd3,
+        ANDac       = 4'd4,
+        ORac        = 4'd5,
+        SLTac       = 4'd6,
+        MULTUac     = 4'd7,
+        DIVUac      = 4'd8,
+        MFHIac      = 4'd9,
+        MFLOac      = 4'd10,
+        JRac        = 4'd11
     } alu_ctrl_t;
-
-    // Control signal for tb_datapath
-    typedef struct
-    {
-        logic       rf_we;
-        logic [1:0] sel_wa;
-        logic       sel_alu_b;
-        logic [1:0] sel_result;
-        logic [1:0] sel_pc;
-        logic [3:0] alu_ctrl;
-    } testbench_ctrl_t;
 
     typedef enum logic [5:0]
     {
+        // OPCODE_ADD      = 6'h00,
+        // OPCODE_ADDU     = 6'h00,
+        // OPCODE_AND      = 6'h00,
+        // OPCODE_NOR      = 6'h00,
+        // OPCODE_OR       = 6'h00,
+        // OPCODE_SLTU     = 6'h00,
+        // OPCODE_SLL      = 6'h00,
+        // OPCODE_SRL      = 6'h00,
+        // OPCODE_SUB      = 6'h00,
+        // OPCODE_SUBU     = 6'h00,
+        // OPCODE_DIV      = 6'h00,
+        // OPCODE_DIVU     = 6'h00,
+        // OPCODE_MFHI     = 6'h00,
+        // OPCODE_MFLO     = 6'h00,
+        // OPCODE_MULT     = 6'h00,
+        // OPCODE_MULTU    = 6'h00,
+        // OPCODE_SRA      = 6'h00,
+        // OPCODE_SLT      = 6'h00,
+        // OPCODE_JR       = 6'h00,
         OPCODE_R        = 'h00,
-        // OPCODE_ADD      = 8'h00,
-        // OPCODE_ADDU     = 8'h00,
-        // OPCODE_AND      = 8'h00,
-        // OPCODE_NOR      = 8'h00,
-        // OPCODE_OR       = 8'h00,
-        // OPCODE_SLTU     = 8'h00,
-        // OPCODE_SLL      = 8'h00,
-        // OPCODE_SRL      = 8'h00,
-        // OPCODE_SUB      = 8'h00,
-        // OPCODE_SUBU     = 8'h00,
-        // OPCODE_DIV      = 8'h00,
-        // OPCODE_DIVU     = 8'h00,
-        // OPCODE_MFHI     = 8'h00,
-        // OPCODE_MFLO     = 8'h00,
-        // OPCODE_MULT     = 8'h00,
-        // OPCODE_MULTU    = 8'h00,
-        // OPCODE_SRA      = 8'h00,
-        // OPCODE_SLT      = 8'h00,
-        // OPCODE_JR       = 8'h00,
         OPCODE_ADDI     = 'h08,
         OPCODE_ADDIU    = 'h09,
         OPCODE_ANDI     = 'h0C,
@@ -197,26 +225,25 @@ package global_types;
 endpackage
 
 
+//// Datapath testing
 package testbench_globals;
 
+    // Packages
     import global_types::*;
 
-    // Constructor for i_instruction_t
-    function i_instruction_t create_i_instruction(input [5:0] opcode, [4:0] rs, [4:0] rt, [15:0] immediate);
-        automatic i_instruction_t i = '{ opcode, rs, rt, immediate };
-        return i;
+    // Returns an I-Type instruction
+    function logic32 set_instruction_i(input logic6 opcode, logic5 rs, logic5 rt, logic16 imm);
+        return { opcode, rs, rt, imm };
     endfunction
 
-    // Constructor for j_instruction_t
-    function j_instruction_t create_j_instruction(input [5:0] opcode, [25:0] address);
-        automatic j_instruction_t j = '{ opcode, address };
-        return j;
+    // Returns an J-Type instruction
+    function logic32 set_instruction_j(input logic6 opcode, logic [27:0] address);
+        return { opcode, address };
     endfunction
 
-    // Constructor for r_instruction_t
-    function r_instruction_t create_r_instruction(input [5:0] opcode, [4:0] rs, [4:0] rt, [4:0] rd, [5:0] shamt, [5:0] funct);
-        automatic r_instruction_t r = '{ opcode, rs, rt, rd, shamt, funct };
-        return r;
+    // Returns an R-Type instruction
+    function logic32 set_instruction_r(input logic6 opcode, logic5 rs, logic5 rt, logic5 rd, logic5 shamt, logic6 funct);
+        return { opcode, rs, rt, rd, shamt, funct };
     endfunction
 
     // Testbench control struct
@@ -247,11 +274,29 @@ package testbench_globals;
 
     // All the controls to test
     testbench_control_t
-    tb_LWc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_RD,      SEL_PC_PC_PLUS4, DONT_CAREac},
-    tb_SWc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, DONT_CAREac},
-    tb_ADDIc = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ADDIac};
+    // I-Type
+    TB_LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_RD,         SEL_PC_PC_PLUS4, DONT_CAREac},
+    TB_SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, DONT_CAREac},
+    TB_ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDIac},
+    TB_BEQYc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_BRANCH,   SUBac},
+    TB_BEQNc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SUBac},
+    // J-Type
+    TB_Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_JUMP,     DONT_CAREac},
+    TB_JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  SEL_RESULT_PC_PLUS4,   SEL_PC_JUMP,     DONT_CAREac},
+    // R-Type
+    TB_JRc     = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_RESULT,   JRac},
+    TB_Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, DONT_CAREac},
+    TB_ADDc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDac},
+    TB_ORc     = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ORac},
+    TB_SLTc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SLTac},
+    TB_SUBc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SUBac},
+    TB_DIVUc   = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE,  SEL_PC_PC_PLUS4, DIVUac},
+    TB_MFHIc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, MFHIac},
+    TB_MFLOc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, MFLOac},
+    TB_MULTUc  = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE,  SEL_PC_PC_PLUS4, MULTUac};
 
 endpackage
+
 
 //// For control unit
 package control_signals;
@@ -273,16 +318,24 @@ package control_signals;
     // Control unit control signals for each instruction
     control_t
     // I-Type
-    LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_RD,      SEL_PC_PC_PLUS4, ALU_OP_ADDI},
-    SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_ENABLE,  SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ALU_OP_ADDI},
-    ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ALU_OP_ADDI},
-    Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_JUMP,     ALU_OP_ADDI},
-    JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,SEL_PC_JUMP,     ALU_OP_ADDI},
-    BEQYc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_BRANCH,   ALU_OP_SUBI},
-    BEQNc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ALU_OP_SUBI},
+    LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_RD,          SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
+    SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_ENABLE,  SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
+    ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
+    Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_JUMP,       ALU_OP_ADDI},
+    JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,    SEL_PC_JUMP,       ALU_OP_ADDI},
+    BEQYc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_BRANCH,     ALU_OP_SUBI},
+    BEQNc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_SUBI},
     // R-Type
-    JRc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_RESULT,   ALU_OP_DONT_CARE},
-    Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT, SEL_PC_PC_PLUS4, ALU_OP_DONT_CARE};
+    JRc     = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_RESULT,     ALU_OP_R},
+    Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    ADDc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    ORc     = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    SLTc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    SUBc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    DIVUc   = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE,   SEL_PC_PC_PLUS4,   ALU_OP_R},
+    MFHIc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    MFLOc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
+    MULTUc  = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE,   SEL_PC_PC_PLUS4,   ALU_OP_R};
 
     // Convert control_t into a 11-bit vector
     function logic [10:0] decode_control(input control_t c);
@@ -303,6 +356,8 @@ package control_signals;
 
 endpackage
 
+
+//// Helper functions
 package global_functions;
 
     // Adds 2 32-bit numbers
@@ -323,7 +378,7 @@ package global_functions;
 endpackage
 
 
-// CU <--> DP bus
+//// CU <--> DP bus
 interface ControlBus;
 
     import global_types::*;
@@ -336,12 +391,6 @@ interface ControlBus;
     sel_wa_t        sel_wa;
     dmem_we_t       dmem_we;
     logic           zero;
-
-    // Input to control_unit
-    modport ExternalSignals
-    (
-        input   dmem_we
-    );
 
     // Output from control_unit
     // Input to datapath
@@ -356,10 +405,16 @@ interface ControlBus;
     );
 
     // Input to control_unit
+    modport ExternalSignals
+    (
+        inout   dmem_we
+    );
+
+    // Input to control_unit
     // Output to datapath
     modport StatusSignals
     (
-        input   zero
+        inout   zero
     );
 
 endinterface

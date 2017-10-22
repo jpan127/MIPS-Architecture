@@ -38,17 +38,23 @@ module control_unit
     always_comb begin : MAIN_DECODER
         case (opcode)
             // I-TYPE
-            OPCODE_LW:      ctrl = LWc;
-            OPCODE_SW:      ctrl = SWc;
-            OPCODE_BEQ:     ctrl = (control_bus_status.zero) ? BEQYc : BEQNc;
-            OPCODE_ADDI:    ctrl = ADDIc;
+            OPCODE_LW:          ctrl = LWc;
+            OPCODE_SW:          ctrl = SWc;
+            OPCODE_BEQ:         ctrl = (control_bus_status.zero) ? BEQYc : BEQNc;
+            OPCODE_ADDI:        ctrl = ADDIc;
             // J-TYPE
-            OPCODE_J:       ctrl = Jc;
-            OPCODE_JAL:     ctrl = JALc;
+            OPCODE_J:           ctrl = Jc;
+            OPCODE_JAL:         ctrl = JALc;
             // R-TYPE
-            OPCODE_R:       ctrl = (funct == FUNCT_JR) ? (JRc) : (Rc);  // Special case for JR instruction
-            // Not **YET** defined instructions
-            default:        ctrl = CTRL_UNDEFINED;
+            OPCODE_R:       
+            case (funct)
+                FUNCT_JR:       ctrl = JRc;
+                FUNCT_MULTU:    ctrl = MULTUc;
+                FUNCT_DIVU:     ctrl = DIVUc;
+                default:        ctrl = Rc;
+            endcase
+            // Undefined instructions
+            default:            ctrl = CTRL_UNDEFINED;
         endcase
     end
 

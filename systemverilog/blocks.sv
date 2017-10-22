@@ -22,7 +22,7 @@ module regfile
     input   [31:0]  wd,
     output  [31:0]  rd0, rd1        );
 
-    import globals::*;
+    import global_types::*;
 
     reg [31:0] rf [31:0];
     integer i;
@@ -115,8 +115,8 @@ module alu
     logic [31:0] div;           // Quotient of DIV
     logic [31:0] mod;           // Remainder of DIV
 
-    assign div = a / b;
-    assign mod = a - (b * div);
+    assign div = (b == 0) ? 0 : a / b;
+    assign mod = (b == 0) ? 0 : a - (b * div);
 
     // D-Reg Enabled Special Purpose Registers : HI and LO
     d_en_reg HI ( .clock(clock), .reset(reset), .enable(enable), .d(d_hi), .q(q_hi) );
@@ -151,7 +151,7 @@ module alu
     end
 
     // Zero flag
-    assign zero = (y==0) ? 1 : 0;
+    assign zero = (y == 0);
 
 endmodule
 
