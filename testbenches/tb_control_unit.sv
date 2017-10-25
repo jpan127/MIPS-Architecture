@@ -8,12 +8,13 @@ module tb_control_unit;
 
     // DUT ports
     logic [5:0]  opcode, funct;
-
     ControlBus control_bus();
 
     // Testbench variables
     logic        clock;
     logic [8:0]  ctrl;
+    integer      success_count;
+    integer      fail_count;
 
     assign ctrl =
     {
@@ -35,8 +36,7 @@ module tb_control_unit;
                 ADDI    = { 6'h08, NO_FUNCT },
                 J       = { 6'h02, NO_FUNCT },
                 JAL     = { 6'h03, NO_FUNCT },
-                BEQY    = { 6'h04, NO_FUNCT },
-                BEQN    = { 6'h04, NO_FUNCT };
+                BEQ     = { 6'h04, NO_FUNCT };
     // R-Type { NO_OPCODE, funct }
     localparam  JR      = { OPCODE_R, FUNCT_JR },
                 ADD     = { OPCODE_R, FUNCT_ADD },
@@ -73,8 +73,6 @@ module tb_control_unit;
 
     // Asserts the correct control logic is beign set
     logic [8:0] c;
-    integer success_count;
-    integer fail_count;
     task test_instruction;
         input logic [11:0]  instruction;
         input control_t     control;
@@ -118,11 +116,11 @@ module tb_control_unit;
 
         // Branch if Equal, Not Equal
         control_bus.StatusSignals.zero = 0;
-        test_instruction(BEQN, BEQNc, "BEQN");
+        test_instruction(BEQ, BEQc, "BEQN");
 
         // Branch if Equal, Equal
         control_bus.StatusSignals.zero = 1;
-        test_instruction(BEQY, BEQYc, "BEQY");
+        test_instruction(BEQ, BEQc, "BEQY");
 
         // Jump Register
         test_instruction(JR, JRc, "JR");

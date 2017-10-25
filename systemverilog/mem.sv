@@ -24,7 +24,7 @@ module imem
         for (i=0; i<1024; i++) begin 
             rom[i] = 0;
         end
-        $readmemh("lab7_memfile.dat", rom);
+        $readmemh("mem.dat", rom);
     end
     
     // Read

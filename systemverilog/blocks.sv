@@ -89,7 +89,7 @@ module mux4 #(parameter WIDTH=32)
     input       [1:0]           sel,
     output reg  [WIDTH-1:0]     y           );
 
-    always @* begin
+    always_comb begin
         case(sel)
             2'b00: y = a;
             2'b01: y = b;
@@ -134,13 +134,13 @@ module alu
     // ALU operations
     always_comb begin
         case (sel)
-            4'd0:    y = a + b;                     // ADD
+            4'd0:    y = a + b;                     // ADDI
             4'd1:    y = a - b;                     // SUB
             4'd2:    y = a + b;                     // ADD
             4'd3:    y = a - b;                     // SUB
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
-            4'd6:    y = (a < b) ? 1 : 0;           // SLT
+            4'd6:    y = (a < b);                   // SLT
             4'd7:    {d_hi, d_lo} = a * b;          // MULT
             4'd8:    {d_hi, d_lo} = {div, mod};     // DIV
             4'd9:    y = q_hi;                      // MFHI
@@ -155,6 +155,8 @@ module alu
 
 endmodule
 
+
+/*
 
 module sign_extend
 
@@ -184,3 +186,5 @@ module sl2
     assign y = {a[29:0], 2'b00};
     
 endmodule
+
+*/

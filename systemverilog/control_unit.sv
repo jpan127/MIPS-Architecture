@@ -16,8 +16,8 @@ module control_unit
     import control_signals::*;
 
     // Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
-    wire [1:0]    alu_op;
-    reg  [10:0]   ctrl;
+    logic [1:0]    alu_op;
+    logic [10:0]   ctrl;
 
     localparam CTRL_UNDEFINED = 11'bX;
 
@@ -34,27 +34,34 @@ module control_unit
         alu_op                              // 2 bits
     } = ctrl;
 
+    // Set PC_MUX to branch
+    always_comb begin 
+        if (opcode == OPCODE_BEQ && !control_bus_status.zero) begin 
+            control_bus_control.sel_pc = SEL_PC_BRANCH;
+        end
+    end
+
     // Decodes opcode to set ctrl signals
     always_comb begin : MAIN_DECODER
         case (opcode)
             // I-TYPE
-            OPCODE_LW:          ctrl = LWc;
-            OPCODE_SW:          ctrl = SWc;
-            OPCODE_BEQ:         ctrl = (control_bus_status.zero) ? BEQYc : BEQNc;
-            OPCODE_ADDI:        ctrl = ADDIc;
+            OPCODE_LW:       ctrl = LWc;
+            OPCODE_SW:       ctrl = SWc;
+            OPCODE_BEQ:      ctrl = BEQc;
+            OPCODE_ADDI:     ctrl = ADDIc;
             // J-TYPE
-            OPCODE_J:           ctrl = Jc;
-            OPCODE_JAL:         ctrl = JALc;
+            OPCODE_J:        ctrl = Jc;
+            OPCODE_JAL:      ctrl = JALc;
             // R-TYPE
             OPCODE_R:       
             case (funct)
-                FUNCT_JR:       ctrl = JRc;
-                FUNCT_MULTU:    ctrl = MULTUc;
-                FUNCT_DIVU:     ctrl = DIVUc;
-                default:        ctrl = Rc;
+                FUNCT_JR:    ctrl = JRc;
+                FUNCT_MULTU: ctrl = MULTUc;
+                FUNCT_DIVU:  ctrl = DIVUc;
+                default:     ctrl = Rc;
             endcase
             // Undefined instructions
-            default:            ctrl = CTRL_UNDEFINED;
+            default:         ctrl = CTRL_UNDEFINED;
         endcase
     end
 
