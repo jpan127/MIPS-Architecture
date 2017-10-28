@@ -13,7 +13,7 @@ package testbench_globals;
     endfunction
 
     // Returns an J-Type instruction
-    function logic32 set_instruction_j(input logic6 opcode, logic [27:0] address);
+    function logic32 set_instruction_j(input logic6 opcode, logic [25:0] address);
         return { opcode, address };
     endfunction
 
@@ -54,7 +54,7 @@ package testbench_globals;
     TB_LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_RD,         SEL_PC_PC_PLUS4, ADDac},
     TB_SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDac},
     TB_ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDIac},
-    TB_BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SUBac},
+    TB_BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_BRANCH,   SUBac},
     // J-Type
     TB_Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_JUMP,     DONT_CAREac},
     TB_JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  SEL_RESULT_PC_PLUS4,   SEL_PC_JUMP,     DONT_CAREac},

@@ -14,10 +14,10 @@ module mips
 
     import global_types::*;
 
-    wire    [5:0]   opcode, funct;
-    wire    [3:0]   alu_ctrl;
-    wire            zero, sel_alu_b, rf_we;
-    wire    [1:0]   sel_pc, sel_result, sel_wa;
+    logic [5:0]   opcode, funct;
+    logic [3:0]   alu_ctrl;
+    logic         zero, sel_alu_b, rf_we;
+    logic [1:0]   sel_pc, sel_result, sel_wa;
 
     assign opcode = instruction[31:26];
     assign funct  = instruction[5:0];
@@ -30,9 +30,9 @@ module mips
     (
         .opcode                 (opcode),
         .funct                  (funct),
-        .control_bus_external   (control_bus.control_bus_external),
-        .control_bus_control    (control_bus.control_bus_control),
-        .control_bus_status     (control_bus.control_bus_status)
+        .control_bus_external   (ControlBus.ExternalSignals),
+        .control_bus_control    (ControlBus.ControlSignals ),
+        .control_bus_status     (ControlBus.StatusSignals  )
     );
 
     datapath DP 
@@ -44,8 +44,8 @@ module mips
         .pc                     (pc),
         .alu_out                (alu_out),
         .dmem_wd                (dmem_wd),
-        .control_bus_control    (control_bus.control_bus_control),
-        .control_bus_status     (control_bus.control_bus_status)
+        .control_bus_control    (ControlBus.ControlSignals),
+        .control_bus_status     (ControlBus.StatusSignals )
     );
 
 endmodule

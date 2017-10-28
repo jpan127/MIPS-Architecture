@@ -12,6 +12,7 @@ package global_types;
     typedef logic [3:0]  logic4;
     typedef logic [4:0]  logic5;
     typedef logic [5:0]  logic6;
+    typedef logic [10:0] logic11;
     typedef logic [15:0] logic16;
     typedef logic [25:0] logic26;
     typedef logic [31:0] logic32;
@@ -248,12 +249,13 @@ package control_signals;
     // Control unit control signals for each instruction
     control_t
     // I-Type
-    LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_RD,          SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
+    LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_RD,          SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
     SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_ENABLE,  SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
     ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
     Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_JUMP,       ALU_OP_ADDI},
     JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,    SEL_PC_JUMP,       ALU_OP_ADDI},
-    BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_SUBI},
+    BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_BRANCH,     ALU_OP_SUBI},
+    BEQNc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_SUBI},
     // R-Type
     JRc     = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_RESULT,     ALU_OP_R},
     Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},

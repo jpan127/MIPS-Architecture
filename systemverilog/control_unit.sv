@@ -7,18 +7,19 @@
 
 module control_unit 
 
-(   input [5:0]                 opcode, funct,
+    import global_types::*;
+    import control_signals::*;
+
+(   input logic6                opcode, funct,
     ControlBus.ExternalSignals  control_bus_external,
     ControlBus.ControlSignals   control_bus_control,
     ControlBus.StatusSignals    control_bus_status     );
 
-    import global_types::*;
-    import control_signals::*;
-
     // Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
-    logic [1:0]    alu_op;
-    logic [10:0]   ctrl;
+    logic2  alu_op;
+    logic11 ctrl;
 
+    // Fail when undefined opcode
     localparam CTRL_UNDEFINED = 11'bX;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -34,20 +35,13 @@ module control_unit
         alu_op                              // 2 bits
     } = ctrl;
 
-    // Set PC_MUX to branch
-    always_comb begin 
-        if (opcode == OPCODE_BEQ && !control_bus_status.zero) begin 
-            control_bus_control.sel_pc = SEL_PC_BRANCH;
-        end
-    end
-
     // Decodes opcode to set ctrl signals
     always_comb begin : MAIN_DECODER
         case (opcode)
             // I-TYPE
             OPCODE_LW:       ctrl = LWc;
             OPCODE_SW:       ctrl = SWc;
-            OPCODE_BEQ:      ctrl = BEQc;
+            OPCODE_BEQ:      ctrl = (control_bus_status.zero) ? BEQc : BEQNc;
             OPCODE_ADDI:     ctrl = ADDIc;
             // J-TYPE
             OPCODE_J:        ctrl = Jc;
