@@ -155,6 +155,27 @@ module alu
 
 endmodule
 
+module debouncer
+
+(   input  clock, reset,
+    input  button,
+    output debounced    );
+
+    localparam max = (2 ** 16) - 1;
+    logic [16-1:0] history;
+
+    always_ff @(posedge clock, posedge reset) begin 
+        if (reset) begin 
+            history <= 0;    
+        end
+        else begin 
+            history <= { button, history[16-1:1] };
+        end
+    end
+
+    assign debounced = (history == max);
+
+endmodule
 
 /*
 

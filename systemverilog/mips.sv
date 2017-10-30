@@ -50,13 +50,56 @@ module mips
 
 endmodule
 
-module top
+module system
 
 (   input         clock, reset, 
     output [31:0] dmem_wd, alu_out,
     output        dmem_we               );
 
     wire [31:0] pc, instruction, dmem_rd;
+
+    mips MIPS 
+    (
+        .clock          (clock), 
+        .reset          (reset), 
+        .pc             (pc), 
+        .instruction    (instruction), 
+        .dmem_we        (dmem_we), 
+        .alu_out        (alu_out), 
+        .dmem_wd        (dmem_wd), 
+        .dmem_rd        (dmem_rd)
+    );
+
+    imem IMEM 
+    ( 
+        .addr           (pc[11:2]),        // 10 bits for 1024 spots
+        .data           (instruction) 
+    );
+    
+    dmem DMEM 
+    ( 
+        .clock          (clock), 
+        .we             (dmem_we), 
+        .addr           (alu_out[9:0]), 
+        .wd             (dmem_wd), 
+        .rd             (dmem_rd) 
+    );
+
+endmodule
+
+
+module system_debug
+
+(   input         clock, reset, 
+    output [31:0] dmem_wd, alu_out,
+    output        dmem_we,
+    // Extra debug outputs
+    output [31:0] instruction,
+    output [31:0] pc,
+    output [9:0]  dmem_addr
+    output [31:0] dmem_rd            );
+
+    assign dmem_addr = alu_out[9:0];
 
     mips MIPS 
     (
