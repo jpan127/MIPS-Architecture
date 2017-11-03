@@ -9,7 +9,7 @@
 module tb_system;
 
     // DUT ports
-    logic        clock, reset,      // Inputs
+    logic        clock, reset;      // Inputs
     logic [31:0] dmem_wd, alu_out;  // Outputs
     logic        dmem_we;
     logic [31:0] instruction;
@@ -18,28 +18,41 @@ module tb_system;
     logic [31:0] dmem_rd;
 
     // Testbench variables
-    logic [4:0]  counter;
-    localparam   max = 23;
+    logic [5:0]  counter;
+    localparam   max = 'd53;
 
     // DUT
-    system DUT(.*);
+    system_debug DUT(.*);
 
-    // Tasks
+    // [TASK] Log some information
     task log;
         begin
             if (dmem_we) begin 
                 $display("DMEM Write Data : %d", dmem_wd);
             end
-            $display("ALU             : %d", alu_out);
+            $display("ALU               : %d", alu_out);
             $display("IMEM[%d]        : %H", pc[11:2], instruction);
             $display("DMEM[%d] Read   : %d", dmem_addr, dmem_rd);
+            $display("-------------------------------");
+        end
+    endtask
+
+    // [TASK] Assert values are equal
+    task assert_equal;
+        input logic [31:0] expected;
+        input logic [31:0] actual;
+        input string       name;
+        begin 
+            if (expected == actual)
+                $display("[%s] SUCCESS", name);
+            else
+                $error("[%s] FAILED Expected: %h Actual: %h", name, expected[7:0], actual[7:0]);
         end
     endtask
 
     // Initial state
     initial begin
         clock   = 0;
-        counter = 0;
         `reset_system
     end
 
@@ -47,12 +60,47 @@ module tb_system;
     always #5 clock = ~clock;
 
     // Increment counter every clock
-    always_ff @(posedge clock) begin
-        counter <= counter + 1;
-        log;
-    end
+    always_ff @(posedge clock, posedge reset) begin
 
-    // Stop every 23 cycles
-    always_comb if (counter == max) $stop;
+        // Reset
+        if (reset) begin
+            counter <= 0;
+        end
+
+        // No reset
+        else begin
+
+            // Stop simulation after program ends
+            if (counter == max+1) begin
+                $stop;
+            end
+
+            // Program has not ended
+            else begin 
+                // Increment Counter
+                counter <= counter + 1;
+
+                // Check dmem write data only when write enable is on
+                if (dmem_we) begin 
+                    // Check each case when it should be writing data to dmem
+                    case (alu_out[9:0]) 
+                        10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
+                        10'h1F8: assert_equal(32'h8,  dmem_wd, "DMEM_WD 2" );
+                        10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
+                        10'h1F0: assert_equal(32'h3C, dmem_wd, "DMEM_WD 4" );
+                        10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
+                        10'h1E8: assert_equal(32'h3C, dmem_wd, "DMEM_WD 6" );
+                        10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
+                        10'h1E0: assert_equal(32'h3C, dmem_wd, "DMEM_WD 8" );
+                    endcase
+                end
+
+                // Check last ADD instruction, the result
+                if (counter == max) begin 
+                    assert_equal(32'h18, alu_out, "ALU FINAL RESULT");
+                end
+            end
+        end
+    end
 
 endmodule

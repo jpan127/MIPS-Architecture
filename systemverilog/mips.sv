@@ -96,7 +96,7 @@ module system_debug
     // Extra debug outputs
     output [31:0] instruction,
     output [31:0] pc,
-    output [9:0]  dmem_addr
+    output [9:0]  dmem_addr,
     output [31:0] dmem_rd            );
 
     assign dmem_addr = alu_out[9:0];
