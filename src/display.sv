@@ -1,5 +1,5 @@
 // Preprocessed calculation for converting 100MHz to 5Khz
-`define MHZ100_TO_KHZ5  (28'd100_000_000 / 12'd5000)
+`define MHZ100_TO_KHZ5  (28'd100_000_000 / 28'd5_000)
 
 //////////////////////////////////////////
 // Modules:                             //

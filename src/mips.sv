@@ -37,28 +37,25 @@ module mips
 
     control_unit CU 
     (
-        .opcode                 (opcode),
-        .funct                  (funct),
-        .control_bus_external   (control_bus.ExternalSignals),
-        .control_bus_control    (control_bus.ControlSignals ),
-        .control_bus_status     (control_bus.StatusSignals  )
+        .opcode         (opcode),
+        .funct          (funct),
+        .control_bus    (control_bus.Sender)
     );
 
     datapath DP 
     (
-        .clock                  (clock),
-        .reset                  (reset),
-        .instruction            (instruction),
-        .dmem_rd                (dmem_rd),
-        .pc                     (pc),
-        .alu_out                (alu_out),
-        .dmem_wd                (dmem_wd),
+        .clock          (clock),
+        .reset          (reset),
+        .instruction    (instruction),
+        .dmem_rd        (dmem_rd),
+        .pc             (pc),
+        .alu_out        (alu_out),
+        .dmem_wd        (dmem_wd),
 `ifdef VALIDATION
-        .debug_in               (debug_in),
-        .debug_out              (debug_out),
+        .debug_in       (debug_in),
+        .debug_out      (debug_out),
 `endif
-        .control_bus_control    (control_bus.ControlSignals),
-        .control_bus_status     (control_bus.StatusSignals )
+        .control_bus    (control_bus.Receiver)
     );
 
 endmodule

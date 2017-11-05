@@ -15,11 +15,10 @@ module datapath
     output  [31:0]  pc, alu_out, dmem_wd,
     // Interfaces
 `ifdef VALIDATION
-    DebugBus.InputBus         debug_in,
-    DebugBus.OutputBus        debug_out,
+    DebugBus.InputBus       debug_in,
+    DebugBus.OutputBus      debug_out,
 `endif
-    ControlBus.ControlSignals control_bus_control,
-    ControlBus.StatusSignals  control_bus_status     );
+    ControlBus.Receiver     control_bus     );
 
     // Packages
     import global_types::*;
@@ -55,7 +54,7 @@ module datapath
     regfile RF  
     ( 
         .clock      (clock),
-        .we         (control_bus_control.rf_we),
+        .we         (control_bus.rf_we),
         .wa         (wa),
         .ra0        (ra0),
         .ra1        (ra1),
@@ -75,7 +74,7 @@ module datapath
         .b          (wa1), 
         .c          (REG_RA), 
         .d          (REG_ZERO), 
-        .sel        (control_bus_control.sel_wa), 
+        .sel        (control_bus.sel_wa), 
         .y          (wa)
     );
 
@@ -86,7 +85,7 @@ module datapath
         .b          (alu_out), 
         .c          (pc_plus4), 
         .d          (ZERO32), 
-        .sel        (control_bus_control.sel_result), 
+        .sel        (control_bus.sel_result), 
         .y          (result) 
     );
 
@@ -108,7 +107,7 @@ module datapath
         .b          (pc_branch), 
         .c          (jump_addr), 
         .d          (result), 
-        .sel        (control_bus_control.sel_pc), 
+        .sel        (control_bus.sel_pc), 
         .y          (pc_next)
     );
 
@@ -122,9 +121,9 @@ module datapath
         .reset      (reset), 
         .a          (alu_a), 
         .b          (alu_b), 
-        .sel        (control_bus_control.alu_ctrl), 
+        .sel        (control_bus.alu_ctrl), 
         .y          (alu_out), 
-        .zero       (control_bus_status.zero)
+        .zero       (control_bus.zero)
     );
 
     // Chooses which signal goes to the ALU port B : RF read port 2 or sign immediate output
@@ -132,7 +131,7 @@ module datapath
     ( 
         .a          (dmem_wd), 
         .b          (sign_imm), 
-        .sel        (control_bus_control.sel_alu_b), 
+        .sel        (control_bus.sel_alu_b), 
         .y          (alu_b) 
     );
 

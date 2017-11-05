@@ -13,29 +13,27 @@ interface ControlBus;
     dmem_we_t       dmem_we;
     logic           zero;
 
-    // Output from control_unit
-    // Input to datapath
-    modport ControlSignals
+    modport Receiver
     (
-        inout   alu_ctrl,
-                rf_we,
-                sel_alu_b,
-                sel_pc,
-                sel_result,
-                sel_wa
+        input  alu_ctrl,
+        input  rf_we,
+        input  sel_alu_b,
+        input  sel_pc,
+        input  sel_result,
+        input  sel_wa,
+        output zero
     );
 
-    // Input to control_unit
-    modport ExternalSignals
+    modport Sender
     (
-        inout   dmem_we
-    );
-
-    // Input to control_unit
-    // Output to datapath
-    modport StatusSignals
-    (
-        inout   zero
+        output alu_ctrl,
+        output rf_we,
+        output sel_alu_b,
+        output sel_pc,
+        output sel_result,
+        output sel_wa,
+        input  zero,
+        output dmem_we
     );
 
 endinterface
@@ -61,20 +59,26 @@ interface DebugBus;
 endinterface
 
 /// Pipeline : Fetch
-interface FetchBus;
+interface FetchBus(input logic clock, reset);
 
     // Packages
-    import global_types::*;
+    import global_types::logic32;
 
     // Writeback : Inputs
     logic32 w_pc;
 
-    modport InputBus (input w_pc);
-
     // Fetch : Outputs
     logic32 f_pc;
 
-    modport OutputBus (output f_pc);
+    always_ff @(posedge clock, posedge reset) begin 
+        if (reset) begin 
+            w_pc <= 0;
+            f_pc <= 0;
+        end
+        else begin 
+            f_pc <= w_pc;
+        end
+    end
 
 endinterface
 
@@ -88,13 +92,13 @@ interface DecodeBus;
     logic32 f_instruction;
     logic32 f_pc_plus4;
 
-    modport InputBus (input f_instruction, input f_pc_plus4);
+    // modport InputBus (input f_instruction, input f_pc_plus4);
 
     // Decode : Outputs
     logic32 d_instruction;
     logic32 d_pc_plus4;
 
-    modport OutputBus (output d_instruction, output d_pc_plus4);
+    // modport OutputBus (output d_instruction, output d_pc_plus4);
 
 endinterface
 
@@ -144,25 +148,25 @@ interface ExecuteBus;
         output e_pc_plus4
     );
 
-    // Control : Inputs
-    ControlBus.ControlSignals  d_control_bus_control;
-    ControlBus.ExternalSignals d_control_bus_external;
+    // // Control : Inputs
+    // ControlBus.ControlSignals  d_control_bus_control;
+    // ControlBus.ExternalSignals d_control_bus_external;
 
-    modport ControlInput
-    (
-        input d_control_bus_control,
-        input d_control_bus_external
-    );
+    // modport ControlInput
+    // (
+    //     input d_control_bus_control,
+    //     input d_control_bus_external
+    // );
 
-    // Control : Outputs
-    ControlBus.ControlSignals  e_control_bus_control;
-    ControlBus.ExternalSignals e_control_bus_external;
+    // // Control : Outputs
+    // ControlBus.ControlSignals  e_control_bus_control;
+    // ControlBus.ExternalSignals e_control_bus_external;
 
-    modport ControlOutput
-    (
-        output e_control_bus_control,
-        output e_control_bus_external
-    );
+    // modport ControlOutput
+    // (
+    //     output e_control_bus_control,
+    //     output e_control_bus_external
+    // );
 
 endinterface
 

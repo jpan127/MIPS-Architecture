@@ -18,12 +18,12 @@ module tb_control_unit;
 
     assign ctrl =
     {
-        control_bus.ControlSignals.rf_we,          // 1 bit
-        control_bus.ControlSignals.sel_wa,         // 2 bits
-        control_bus.ControlSignals.sel_alu_b,      // 1 bit
-        control_bus.ExternalSignals.dmem_we,       // 1 bit
-        control_bus.ControlSignals.sel_result,     // 2 bits
-        control_bus.ControlSignals.sel_pc          // 2 bits
+        control_bus.Sender.rf_we,          // 1 bit
+        control_bus.Sender.sel_wa,         // 2 bits
+        control_bus.Sender.sel_alu_b,      // 1 bit
+        control_bus.Sender.dmem_we,        // 1 bit
+        control_bus.Sender.sel_result,     // 2 bits
+        control_bus.Sender.sel_pc          // 2 bits
     };
 
     // Instructions
@@ -51,21 +51,19 @@ module tb_control_unit;
     // DUT
     control_unit DUT
     (
-        .opcode              (opcode),
-        .funct               (funct),
-        .control_bus_external(control_bus.ExternalSignals),
-        .control_bus_control (control_bus.ControlSignals),
-        .control_bus_status  (control_bus.StatusSignals)
+        .opcode         (opcode),
+        .funct          (funct),
+        .control_bus    (control_bus.Sender)
     );
 
     // Set variables to known state
     initial begin
-        opcode  = 0;
-        funct   = 0;
-        clock   = 0;
-        control_bus.StatusSignals.zero = 0;
-        success_count   = 0;
-        fail_count      = 0;
+        opcode                  = 0;
+        funct                   = 0;
+        clock                   = 0;
+        control_bus.Sender.zero = 0;
+        success_count           = 0;
+        fail_count              = 0;
     end
 
     // Generate #10 period clock
@@ -115,11 +113,11 @@ module tb_control_unit;
         test_instruction(JAL, JALc, "JAL");
 
         // Branch if Equal, Not Equal
-        control_bus.StatusSignals.zero = 0;
+        control_bus.Sender.zero = 0;
         test_instruction(BEQ, BEQNc, "BEQN");
 
         // Branch if Equal, Equal
-        control_bus.StatusSignals.zero = 1;
+        control_bus.Sender.zero = 1;
         test_instruction(BEQ, BEQc, "BEQY");
 
         // Jump Register
