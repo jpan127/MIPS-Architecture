@@ -116,7 +116,7 @@ module tb_control_unit;
 
         // Branch if Equal, Not Equal
         control_bus.StatusSignals.zero = 0;
-        test_instruction(BEQ, BEQc, "BEQN");
+        test_instruction(BEQ, BEQNc, "BEQN");
 
         // Branch if Equal, Equal
         control_bus.StatusSignals.zero = 1;

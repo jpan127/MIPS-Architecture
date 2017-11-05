@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "defines.svh"
 
 // [MACRO] Wait an entire clock cycle
 `define tick            #10;
@@ -8,14 +9,21 @@
 
 module tb_system;
 
+    // Packages
+    import global_types::*;
+
     // DUT ports
-    logic        clock, reset;      // Inputs
-    logic [31:0] dmem_wd, alu_out;  // Outputs
-    logic        dmem_we;
-    logic [31:0] instruction;
-    logic [31:0] pc;
-    logic [9:0]  dmem_addr;
-    logic [31:0] dmem_rd;
+    logic     clock, reset;      // Inputs
+    logic32   dmem_wd, alu_out;  // Outputs
+    logic     dmem_we;
+    logic32   instruction;
+    logic32   pc;
+    logic10   dmem_addr;
+    logic32   dmem_rd;
+`ifdef VALIDATION
+    logic5    rf_ra;
+    logic32   rf_rd;
+`endif
 
     // Testbench variables
     logic [5:0]  counter;
@@ -52,7 +60,8 @@ module tb_system;
 
     // Initial state
     initial begin
-        clock   = 0;
+        $display("///////////////////////////////////////////////////////////////////////");
+        clock = 0;
         `reset_system
     end
 
@@ -98,6 +107,7 @@ module tb_system;
                 // Check last ADD instruction, the result
                 if (counter == max) begin 
                     assert_equal(32'h18, alu_out, "ALU FINAL RESULT");
+                    $display("///////////////////////////////////////////////////////////////////////");
                 end
             end
         end

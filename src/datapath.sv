@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "defines.svh"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                              MIPS Datapath                                              //
@@ -12,6 +13,11 @@ module datapath
     input   [31:0]  instruction,
     input   [31:0]  dmem_rd,
     output  [31:0]  pc, alu_out, dmem_wd,
+    // Interfaces
+`ifdef VALIDATION
+    DebugBus.InputBus         debug_in,
+    DebugBus.OutputBus        debug_out,
+`endif
     ControlBus.ControlSignals control_bus_control,
     ControlBus.StatusSignals  control_bus_status     );
 
@@ -48,13 +54,17 @@ module datapath
 
     regfile RF  
     ( 
-        .clock      (clock), 
-        .we         (control_bus_control.rf_we), 
-        .wa         (wa), 
-        .ra0        (ra0), 
-        .ra1        (ra1), 
-        .wd         (result), 
-        .rd0        (alu_a), 
+        .clock      (clock),
+        .we         (control_bus_control.rf_we),
+        .wa         (wa),
+        .ra0        (ra0),
+        .ra1        (ra1),
+`ifdef VALIDATION
+        .ra2        (debug_in.rf_ra),
+        .rd2        (debug_out.rf_rd),
+`endif
+        .wd         (result),
+        .rd0        (alu_a),
         .rd1        (dmem_wd)
     );
 

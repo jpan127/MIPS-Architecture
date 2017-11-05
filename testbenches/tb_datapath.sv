@@ -1,8 +1,9 @@
 `timescale 1ns / 1ps
+`include "defines.svh"
 
-// [MACRO] Wait an entire clock cycle
+// Wait an entire clock cycle
 `define tick            #10;
-// [MACRO] Reset on, clock, reset off
+// Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
 module tb_datapath;
@@ -29,6 +30,27 @@ module tb_datapath;
     integer fail_count;
     integer instructions_tested;
 
+`ifdef VALIDATION
+    DebugBus debug_bus();
+`endif
+
+    // DUT
+    datapath DUT
+    (
+`ifdef VALIDATION
+        .debug_in           (debug_bus.InputBus),
+        .debug_out          (debug_bus.OutputBus),
+`endif
+        .clock              (clock),
+        .reset              (reset),
+        .instruction        (instruction),
+        .dmem_rd            (dmem_rd),
+        .pc                 (pc),
+        .alu_out            (alu_out),
+        .dmem_wd            (dmem_wd),
+        .control_bus_control(control_bus.ControlSignals),
+        .control_bus_status (control_bus.StatusSignals)
+    );
 
     // Control signal
     reg  [11:0] ctrl;
@@ -455,20 +477,6 @@ module tb_datapath;
             instructions_tested++;
         end
     endtask
-
-    // DUT
-    datapath DUT
-    (
-        .clock              (clock),
-        .reset              (reset),
-        .instruction        (instruction),
-        .dmem_rd            (dmem_rd),
-        .pc                 (pc),
-        .alu_out            (alu_out),
-        .dmem_wd            (dmem_wd),
-        .control_bus_control(control_bus.ControlSignals),
-        .control_bus_status (control_bus.StatusSignals)
-    );
 
     // Generate #10 period clock
     always #5 clock = ~clock;

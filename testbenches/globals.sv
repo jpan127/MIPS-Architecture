@@ -12,6 +12,8 @@ package global_types;
     typedef logic [3:0]  logic4;
     typedef logic [4:0]  logic5;
     typedef logic [5:0]  logic6;
+    typedef logic [7:0]  logic8;
+    typedef logic [9:0]  logic10;
     typedef logic [10:0] logic11;
     typedef logic [15:0] logic16;
     typedef logic [25:0] logic26;
@@ -309,49 +311,5 @@ package global_functions;
     endfunction
 
 endpackage
-
-
-
-//// CU <--> DP bus
-interface ControlBus;
-
-    import global_types::*;
-
-    alu_ctrl_t      alu_ctrl;
-    rf_we_t         rf_we;
-    sel_alu_b_t     sel_alu_b;
-    sel_pc_t        sel_pc;
-    sel_result_t    sel_result;
-    sel_wa_t        sel_wa;
-    dmem_we_t       dmem_we;
-    logic           zero;
-
-    // Output from control_unit
-    // Input to datapath
-    modport ControlSignals
-    (
-        inout   alu_ctrl,
-                rf_we,
-                sel_alu_b,
-                sel_pc,
-                sel_result,
-                sel_wa
-    );
-
-    // Input to control_unit
-    modport ExternalSignals
-    (
-        inout   dmem_we
-    );
-
-    // Input to control_unit
-    // Output to datapath
-    modport StatusSignals
-    (
-        inout   zero
-    );
-
-endinterface
-
 
 `endif

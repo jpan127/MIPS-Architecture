@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "defines.svh"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                  MIPS Microarchitecture Building Blocks                                 //
@@ -20,6 +21,10 @@ module regfile
     input           we,
     input   [4:0]   wa, ra0, ra1,
     input   [31:0]  wd,
+`ifdef VALIDATION
+    input   [4:0]   ra2,
+    output  [31:0]  rd2,
+`endif
     output  [31:0]  rd0, rd1        );
 
     import global_types::*;
@@ -27,6 +32,7 @@ module regfile
     reg [31:0] rf [31:0];
     integer i;
 
+    // Initialize to 0
     initial begin
         for (i=0; i<32; i=i+1) begin
             rf[i] = 0;
@@ -34,12 +40,17 @@ module regfile
         rf[REG_SP] = 32'h200;
     end
 
+    // Clock triggered write operation
     always_ff @ (posedge clock) begin
         if (we) rf[wa] <= wd;
     end
 
+    // Combinational read operation
     assign rd0 = (ra0 == 0) ? 0 : rf[ra0];
     assign rd1 = (ra1 == 0) ? 0 : rf[ra1];
+`ifdef VALIDATION
+    assign rd2 = (ra2 == 0) ? 0 : rf[ra2];
+`endif
 
 endmodule
 
