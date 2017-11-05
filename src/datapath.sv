@@ -28,7 +28,7 @@ module datapath
     // Internal wires
     logic5   wa, ra0, ra1, wa0, wa1;                    // Register file
     logic16  imm;                                       // Immediate value before sign extend
-    logic32  pc_next, pc_next_br, pc_plus4, pc_branch;  // PC addresses
+    logic32  pc_next, pc_plus4, pc_branch;              // PC addresses
     logic32  jump_addr;                                 // Jump address
     logic32  sign_imm, sign_imm_sh;                     // After sign extend
     logic32  alu_a, alu_b, result;                      // ALU
