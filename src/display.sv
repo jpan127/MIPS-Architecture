@@ -9,6 +9,28 @@
 //          bcd_to_hex                  //
 //////////////////////////////////////////
 
+module debouncer
+
+(   input  clock, reset,
+    input  button,
+    output debounced    );
+
+    localparam max = (2 ** 16) - 1;
+    logic [16-1:0] history;
+
+    always_ff @(posedge clock, posedge reset) begin 
+        if (reset) begin 
+            history <= 0;    
+        end
+        else begin 
+            history <= { button, history[16-1:1] };
+        end
+    end
+
+    assign debounced = (history == max);
+
+endmodule
+
 module clock_gen
 
 (   input        reset,
@@ -34,6 +56,29 @@ module clock_gen
             end
         end
     end
+
+endmodule
+
+module clock_controller
+
+(   input        clock_100MHz, reset, button,
+    output logic db_button
+    output logic clock_5KHz                   );
+
+    debouncer DEBOUNCER
+    (
+        .clock          (button),
+        .reset          (reset),
+        .button         (button),
+        .debounced      (db_button)
+    );
+
+    clock_gen CLOCK_GENERATOR
+    (
+        .reset          (reset),
+        .clock_100Mhz   (clock_100MHz),
+        .clock_5KHz     (clock_5KHz)
+    );
 
 endmodule
 
@@ -91,22 +136,14 @@ module bcd_to_hex
 
 endmodule
 
-module display
+module display_controller
 
 (   input        clock, reset,
     input  [3:0] bcds [7:0],
     output [7:0] sel_led,
     output [7:0] led_value      );
 
-    logic       clock_5KHz;
     logic [7:0] leds [7:0];
-
-    clock_gen CLOCK_GENERATOR
-    (
-        .clock_5KHz     (clock_5KHz),
-        .clock_100Mhz   (clock),
-        .reset          (reset)
-    );
 
     mux_led MULTIPLEXER_LEDS
     (
