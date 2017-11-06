@@ -73,15 +73,4 @@ package testbench_globals;
 
 endpackage
 
-
-
-/// Tests for each instruction
-package instruction_tests;
-
-    // Packages
-    import global_types::*;
-    import testbench_globals::*;
-
-endpackage
-
 `endif

@@ -105,14 +105,14 @@ module system
     always_comb begin : LED_VALUES
         // Left 4 LEDS = PC[15:0];
         bcds[7] = pc[15:12];
-        bcds[6] = pc[11:8];
-        bcds[5] = pc[7:4];
-        bcds[4] = pc[3:0];
+        bcds[6] = pc[11: 8];
+        bcds[5] = pc[ 7: 4];
+        bcds[4] = pc[ 3: 0];
         // Right 4 LEDS = Multiplexed display_right
         bcds[3] = display_right[15:12];
-        bcds[2] = display_right[11:8];
-        bcds[1] = display_right[7:4];
-        bcds[0] = display_right[3:0];
+        bcds[2] = display_right[11: 8];
+        bcds[1] = display_right[ 7: 4];
+        bcds[0] = display_right[ 3: 0];
     end
 
     clock_controller CLOCK_CONTROLLER
