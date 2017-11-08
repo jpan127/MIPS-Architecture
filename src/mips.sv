@@ -63,7 +63,7 @@ endmodule
 /// Top-level FPGA module
 module system
 
-(   input         clock_100MHz, clock, reset,
+(   input         clock_100MHz, button, reset,
     input  [4:0]  rf_ra,                            // Selects which register from register file to probe
     input  [2:0]  sel_display,                      // Selects which mode to probe
     output        dmem_we,
@@ -75,7 +75,7 @@ module system
     // Internal wires
     logic32 alu_out, dmem_wd;
     logic32 pc, instruction, dmem_rd;
-    logic   debounced;
+    logic   db_button;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     DEBUG LED DISPLAY                                     //
@@ -105,31 +105,32 @@ module system
     always_comb begin : LED_VALUES
         // Left 4 LEDS = PC[15:0];
         bcds[7] = pc[15:12];
-        bcds[6] = pc[11:8];
-        bcds[5] = pc[7:4];
-        bcds[4] = pc[3:0];
+        bcds[6] = pc[11: 8];
+        bcds[5] = pc[ 7: 4];
+        bcds[4] = pc[ 3: 0];
         // Right 4 LEDS = Multiplexed display_right
         bcds[3] = display_right[15:12];
-        bcds[2] = display_right[11:8];
-        bcds[1] = display_right[7:4];
-        bcds[0] = display_right[3:0];
+        bcds[2] = display_right[11: 8];
+        bcds[1] = display_right[ 7: 4];
+        bcds[0] = display_right[ 3: 0];
     end
 
-    display DISPLAY
+    clock_controller CLOCK_CONTROLLER
     (
-        .clock          (debounced), 
+        .clock_100MHz   (clock_100MHz),
+        .clock_5KHz     (clock_5KHz),
+        .reset          (reset),
+        .button         (button),
+        .db_button      (db_button)
+    );
+
+    display_controller DISPLAY_CONTROLLER
+    (
+        .clock          (clock_5KHz), 
         .reset          (reset),
         .bcds           (bcds),
         .sel_led        (sel_led),
         .led_value      (led_value)
-    );
-
-    debouncer DEBOUNCER
-    (
-        .clock          (clock_100MHz),
-        .reset          (reset),
-        .button         (clock),
-        .debounced      (debounced)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -140,7 +141,7 @@ module system
     (
         .debug_in       (debug_bus.InputBus),
         .debug_out      (debug_bus.OutputBus),
-        .clock          (debounced), 
+        .clock          (db_button), 
         .reset          (reset), 
         .pc             (pc), 
         .instruction    (instruction),
@@ -158,7 +159,7 @@ module system
     
     dmem DMEM 
     ( 
-        .clock          (debounced), 
+        .clock          (db_button), 
         .we             (dmem_we), 
         .addr           (alu_out[9:0]), 
         .wd             (dmem_wd), 

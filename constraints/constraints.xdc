@@ -1,8 +1,9 @@
+# Clock
 create_clock -add -name sys_clk_pin -period 10.00 -waveform {0 5}   [get_ports { clock_100MHz   }];
 set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 }        [get_ports { clock_100MHz   }];
 
 # Buttons
-set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 }        [get_ports { clock          }];
+set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 }        [get_ports { button         }];
 set_property -dict { PACKAGE_PIN M18   IOSTANDARD LVCMOS33 }        [get_ports { reset          }];
    
 # Controls
@@ -15,7 +16,7 @@ set_property -dict { PACKAGE_PIN T18   IOSTANDARD LVCMOS33 }        [get_ports {
 set_property -dict { PACKAGE_PIN U18   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[1] }];
 set_property -dict { PACKAGE_PIN R13   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[2] }];
 
-set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 }        [get_ports { dmem_we }];
+set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 }        [get_ports { dmem_we        }];
 
 set_property -dict { PACKAGE_PIN K13   IOSTANDARD LVCMOS33 }        [get_ports { led_value[0]   }];
 set_property -dict { PACKAGE_PIN K16   IOSTANDARD LVCMOS33 }        [get_ports { led_value[1]   }];

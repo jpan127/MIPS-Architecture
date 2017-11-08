@@ -144,6 +144,9 @@ module alu
 
     // ALU operations
     always_comb begin
+        // Set to known state to prevent latches
+        { d_hi, d_lo, y } = 0;
+
         case (sel)
             4'd0:    y = a + b;                     // ADDI
             4'd1:    y = a - b;                     // SUB
@@ -152,8 +155,8 @@ module alu
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
             4'd6:    y = (a < b);                   // SLT
-            4'd7:    {d_hi, d_lo} = a * b;          // MULT
-            4'd8:    {d_hi, d_lo} = {div, mod};     // DIV
+            4'd7:    { d_hi, d_lo } = a * b;        // MULT
+            4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
             4'd9:    y = q_hi;                      // MFHI
             4'd10:   y = q_lo;                      // MFLO
             4'd11:   y = a;                         // JR, pass through a
@@ -163,28 +166,6 @@ module alu
 
     // Zero flag
     assign zero = (y == 0);
-
-endmodule
-
-module debouncer
-
-(   input  clock, reset,
-    input  button,
-    output debounced    );
-
-    localparam max = (2 ** 16) - 1;
-    logic [16-1:0] history;
-
-    always_ff @(posedge clock, posedge reset) begin 
-        if (reset) begin 
-            history <= 0;    
-        end
-        else begin 
-            history <= { button, history[16-1:1] };
-        end
-    end
-
-    assign debounced = (history == max);
 
 endmodule
 
