@@ -48,31 +48,30 @@ module tb_datapath;
         .pc                 (pc),
         .alu_out            (alu_out),
         .dmem_wd            (dmem_wd),
-        .control_bus_control(control_bus.ControlSignals),
-        .control_bus_status (control_bus.StatusSignals)
+        .control_bus        (control_bus.Receiver)
     );
 
     // Control signal
     reg  [11:0] ctrl;
     always_comb begin
         {
-            control_bus.ControlSignals.rf_we,          // 1 bit
-            control_bus.ControlSignals.sel_wa,         // 2 bits
-            control_bus.ControlSignals.sel_alu_b,      // 1 bit
-            control_bus.ControlSignals.sel_result,     // 2 bits
-            control_bus.ControlSignals.sel_pc,         // 2 bits
-            control_bus.ControlSignals.alu_ctrl        // 4 bits
+            control_bus.Receiver.rf_we,          // 1 bit
+            control_bus.Receiver.sel_wa,         // 2 bits
+            control_bus.Receiver.sel_alu_b,      // 1 bit
+            control_bus.Receiver.sel_result,     // 2 bits
+            control_bus.Receiver.sel_pc,         // 2 bits
+            control_bus.Receiver.alu_ctrl        // 4 bits
         } = ctrl;
     end
 
     // Initial State
     initial begin 
-        control_bus.ControlSignals.sel_alu_b   = SEL_ALU_B_DONT_CARE;
-        control_bus.ControlSignals.rf_we       = RF_WE_DONT_CARE;
-        control_bus.ControlSignals.sel_pc      = SEL_PC_DONT_CARE;
-        control_bus.ControlSignals.sel_result  = SEL_RESULT_DONT_CARE;
-        control_bus.ControlSignals.sel_wa      = SEL_WA_DONT_CARE;
-        control_bus.ControlSignals.alu_ctrl    = DONT_CAREac;
+        control_bus.Receiver.sel_alu_b   = SEL_ALU_B_DONT_CARE;
+        control_bus.Receiver.rf_we       = RF_WE_DONT_CARE;
+        control_bus.Receiver.sel_pc      = SEL_PC_DONT_CARE;
+        control_bus.Receiver.sel_result  = SEL_RESULT_DONT_CARE;
+        control_bus.Receiver.sel_wa      = SEL_WA_DONT_CARE;
+        control_bus.Receiver.alu_ctrl    = DONT_CAREac;
         clock               = 0;
         instruction         = 0;
         dmem_rd             = 0;
@@ -229,7 +228,7 @@ module tb_datapath;
             ctrl = TB_BEQc;
             `tick
 
-            assert_equal(1, control_bus.StatusSignals.zero, "BEQY::ZERO");
+            assert_equal(1, control_bus.Receiver.zero, "BEQY::ZERO");
             assert_equal(correct_branch1, pc, "BEQY::PC");
 
             // Set REG_1 = 7FFF
@@ -240,7 +239,7 @@ module tb_datapath;
             ctrl = TB_BEQc;
             `tick
 
-            assert_equal(0, control_bus.StatusSignals.zero, "BEQN::ZERO");
+            assert_equal(0, control_bus.Receiver.zero, "BEQN::ZERO");
             assert_not_equal(correct_branch2, pc, "BEQN::PC");
 
             instructions_tested++;
