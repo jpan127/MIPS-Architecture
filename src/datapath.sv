@@ -23,6 +23,7 @@ module datapath
     // Packages
     import global_types::*;
     import global_functions::*;
+    import pipeline_pkg::*;
 
     // Internal wires
     logic5   wa, ra0, ra1, wa0, wa1;                    // Register file
@@ -33,19 +34,41 @@ module datapath
     logic32  alu_a, alu_b, result;                      // ALU
 
     // Split instruction
-    assign ra0          = instruction[25:21];
-    assign ra1          = instruction[20:16];
-    assign wa0          = instruction[20:16];           // I-Type
-    assign wa1          = instruction[15:11];           // R-Type
-    assign imm          = instruction[15:0];
+    assign ra0          = d_instruction[25:21];
+    assign ra1          = d_instruction[20:16];
+    assign wa0          = d_instruction[20:16];           // I-Type
+    assign wa1          = d_instruction[15:11];           // R-Type
+    assign imm          = d_instruction[15:0];
     // MIPS instructions always have lower 2 bits zero, word aligned
-    assign jump_addr    = { pc_plus4[31:28], instruction[25:0], 2'b00 };
+    assign jump_addr    = { d_pc_plus4[31:28], d_instruction[25:0], 2'b00 };
 
     // Helper functions instead of modules
     assign sign_imm     = sign_extend(imm);
     assign sign_imm_sh  = shift_left_2(sign_imm);
     assign pc_plus4     = add(pc, 32'd4);
-    assign pc_branch    = add(pc_plus4, sign_imm_sh);
+    assign pc_branch    = add(d_pc_plus4, sign_imm_sh);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                    PIPELINE : DECODE                                      //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    logic32 d_pc_plus4, d_instruction;
+
+    // Bus
+    DecodeBus decode_bus;
+    // Bus Inputs
+    assign decode_bus.f_instruction = instruction;
+    assign decode_bus.f_pc_plus4    = pc_plus4;
+    // Bus Outputs
+    assign d_pc_plus4    = decode_bus.d_pc_plus4;
+    assign d_instruction = decode_bus.d_instruction;
+
+    decode_reg DECODE_REGISTER
+    (
+        .clock      (clock),
+        .reset      (reset),
+        .decode_bus (decode_bus)
+    );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                  REGFILE LOGIC BLOCKS                                     //
@@ -83,7 +106,7 @@ module datapath
     ( 
         .a          (dmem_rd), 
         .b          (alu_out), 
-        .c          (pc_plus4), 
+        .c          (d_pc_plus4), 
         .d          (ZERO32), 
         .sel        (control_bus.sel_result), 
         .y          (result) 
@@ -93,22 +116,28 @@ module datapath
     //                                  PC LOGIC BLOCKS                                          //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    d_reg PC
-    ( 
-        .clock      (clock), 
-        .reset      (reset), 
-        .d          (pc_next), 
-        .q          (pc)
-    );
-    
     mux4 #(32) MUX_PC
     ( 
-        .a          (pc_plus4), 
+        .a          (d_pc_plus4), 
         .b          (pc_branch), 
         .c          (jump_addr), 
         .d          (result), 
         .sel        (control_bus.sel_pc), 
         .y          (pc_next)
+    );
+
+    // Bus
+    FetchBus fetch_bus;
+    // Bus Inputs
+    assign fetch_bus.w_pc = pc_next;
+    // Bus Outputs
+    assign pc = fetch_bus.f_pc;
+    
+    fetch_reg FETCH_REGISTER
+    (
+        .fetch_bus  (fetch_bus),
+        .clock      (clock),
+        .reset      (reset)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

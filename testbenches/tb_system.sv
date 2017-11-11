@@ -26,8 +26,9 @@ module tb_system;
 `endif
 
     // Testbench variables
-    logic [5:0]  counter;
-    localparam   max = 'd53;
+    logic16      counter;
+    localparam   STAGES = 'd2;
+    localparam   MAX    = 'd53 * STAGES;
 
     // DUT
     system_debug DUT(.*);
@@ -80,7 +81,7 @@ module tb_system;
         else begin
 
             // Stop simulation after program ends
-            if (counter == max+1) begin
+            if (counter == MAX+1) begin
                 $stop;
             end
 
@@ -105,7 +106,7 @@ module tb_system;
                 end
 
                 // Check last ADD instruction, the result
-                if (counter == max) begin 
+                if (counter == MAX) begin 
                     assert_equal(32'h18, alu_out, "ALU FINAL RESULT");
                     $display("///////////////////////////////////////////////////////////////////////");
                 end

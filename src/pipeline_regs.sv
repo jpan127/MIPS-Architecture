@@ -1,44 +1,44 @@
-// `timescale 1ns / 1ps
+`timescale 1ns / 1ps
 
-// module fetch_reg
+module fetch_reg
 
-//     // Packages
-//     import pipeline_pkg::FetchBus;
+    // Packages
+    import pipeline_pkg::FetchBus;
 
-// (   input    clock, reset,
-//     FetchBus fetch_bus     );
+(   input    clock, reset,
+    FetchBus fetch_bus     );
 
-//     // Datapath Signals
-//     always_ff @(posedge clock or posedge reset) begin
-//         if (reset) begin
-//             fetch_bus.w_pc <= 0;
-//         end else begin
-//             fetch_bus.w_pc <= fetch_bus.f_pc;
-//         end
-//     end
+    // Datapath Signals
+    always_ff @(posedge clock or posedge reset) begin
+        if (reset) begin
+            fetch_bus.f_pc <= 0;
+        end else begin
+            fetch_bus.f_pc <= fetch_bus.w_pc;
+        end
+    end
 
-// endmodule
+endmodule
 
-// module decode_reg
+module decode_reg
 
-//     // Packages
-//     import pipeline_pkg::DecodeBus;
+    // Packages
+    import pipeline_pkg::DecodeBus;
 
-// (   input       clock, reset,
-//     DecodeBus   decode_bus    );
+(   input       clock, reset,
+    DecodeBus   decode_bus    );
 
-//     // Datapath Signals
-//     always_ff @(posedge clock or posedge reset) begin
-//         if (reset) begin
-//             decode_bus.d_instruction <= 0;
-//             decode_bus.d_pc_plus4    <= 0;
-//         end else begin
-//             decode_bus.d_instruction <= decode_bus.f_instruction;
-//             decode_bus.d_pc_plus4    <= decode_bus.f_pc_plus4;
-//         end
-//     end
+    // Datapath Signals
+    always_ff @(posedge clock or posedge reset) begin
+        if (reset) begin
+            decode_bus.d_instruction <= 0;
+            decode_bus.d_pc_plus4    <= 0;
+        end else begin
+            decode_bus.d_instruction <= decode_bus.f_instruction;
+            decode_bus.d_pc_plus4    <= decode_bus.f_pc_plus4;
+        end
+    end
 
-// endmodule
+endmodule
 
 // module execute_reg
 
