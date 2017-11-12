@@ -23,6 +23,8 @@ package global_types;
     localparam logic32  ZERO32 = 'd0,
                         UNUSED = 'd0;
 
+    localparam logic32  NOOP = 32'h60000019;
+
     localparam logic5   REG_ZERO = 'd0,
                         REG_1    = 'd1,
                         REG_2    = 'd2,

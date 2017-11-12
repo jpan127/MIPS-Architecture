@@ -45,7 +45,7 @@ module datapath
     assign d_instruction = decode_bus.d_instruction;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                    PIPELINE : FETCH                                       //
+    //                                     PIPELINE : FETCH                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     assign pc_plus4 = add(pc, 32'd4);           // From after fetch stage
@@ -68,7 +68,7 @@ module datapath
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                    PIPELINE : DECODE                                      //
+    //                                     PIPELINE : DECODE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Bus Inputs
@@ -83,16 +83,25 @@ module datapath
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                  PIPELINE : EXECUTE                                       //
+    //                                    PIPELINE : EXECUTE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    // Bus Inputs
+    assign execute_bus.d_pc_plus4   = decode_bus.d_pc_plus4;
     // Split instruction
     assign ra0                      = decode_bus.d_instruction[25:21];
-    assign execute_bus.d_pc_plus4   = decode_bus.d_pc_plus4;
     assign execute_bus.d_ra1        = decode_bus.d_instruction[20:16];
     assign execute_bus.d_wa0        = decode_bus.d_instruction[20:16];              // I-Type
     assign execute_bus.d_wa1        = decode_bus.d_instruction[15:11];              // R-Type
     assign execute_bus.d_sign_imm   = sign_extend(decode_bus.d_instruction[15: 0]);
+    // Store control signals
+    assign execute_bus.d_alu_ctrl   = control_bus.alu_ctrl;
+    assign execute_bus.d_rf_we      = control_bus.rf_we;
+    assign execute_bus.d_sel_alu_b  = control_bus.sel_alu_b;
+    assign execute_bus.d_sel_pc     = control_bus.sel_pc;
+    assign execute_bus.d_sel_result = control_bus.sel_result;
+    assign execute_bus.d_sel_wa     = control_bus.sel_wa;
+    assign execute_bus.d_dmem_we    = control_bus.dmem_we;
 
     regfile RF  
     ( 
@@ -116,42 +125,51 @@ module datapath
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                    PIPELINE : MEMORY                                      //
+    //                                     PIPELINE : MEMORY                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    // Shift sign-extended immediate left by 2
     assign sign_imm_sh = shift_left_2(execute_bus.e_sign_imm);
-    assign pc_branch   = add(decode_bus.d_pc_plus4, sign_imm_sh);
 
-    // Chooses which is the write address
+    // Bus Inputs
+    assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;
+    assign memory_bus.e_pc_branch  = add(execute_bus.e_pc_plus4, sign_imm_sh);
+    assign memory_bus.e_rf_we      = execute_bus.e_rf_we;
+    assign memory_bus.e_sel_pc     = execute_bus.e_sel_pc;
+    assign memory_bus.e_sel_result = execute_bus.e_sel_result;
+    assign memory_bus.e_dmem_we    = execute_bus.e_dmem_we;
+
+    // Selects which is the write address
     mux4 #(5) MUX_WA    
     ( 
-        .a          (wa0), 
-        .b          (wa1), 
+        .a          (execute_bus.e_wa0),        // From execute stage
+        .b          (execute_bus.e_wa1),        // From execute stage
         .c          (REG_RA), 
         .d          (REG_ZERO), 
-        .sel        (control_bus.sel_wa), 
-        .y          (wa)
+        .sel        (execute_bus.e_sel_wa),     // From execute stage
+        .y          (memory_bus.e_rf_wa)        // To memory stage
+    );
+
+    // Selects which signal goes to the ALU port B : RF read port 2 or sign immediate output
+    mux2 MUX_ALU_B
+    ( 
+        .a          (execute_bus.e_rd1),        // From execute stage
+        .b          (execute_bus.e_sign_imm),   // From execute stage
+        .sel        (execute_bus.e_sel_alu_b),  // From execute stage
+        .y          (alu_b) 
     );
 
     alu ALU
     ( 
         .clock      (clock), 
         .reset      (reset), 
-        .a          (execute_bus.e_rd0), 
+        .a          (execute_bus.e_rd0),        // From execute stage
         .b          (alu_b), 
-        .sel        (control_bus.alu_ctrl), 
-        .y          (alu_out), 
-        .zero       (control_bus.zero)
+        .sel        (execute_bus.e_alu_ctrl),   // From execute stage
+        .y          (memory_bus.e_alu_out),     // To memory stage
+        .zero       (memory_bus.e_zero)         // To memory stage
     );
 
-    // Chooses which signal goes to the ALU port B : RF read port 2 or sign immediate output
-    mux2 MUX_ALU_B
-    ( 
-        .a          (execute_bus.e_rd1), 
-        .b          (execute_bus.e_sign_imm), 
-        .sel        (control_bus.sel_alu_b), 
-        .y          (alu_b) 
-    );
 
     memory_reg MEMORY_REGISTER
     (
@@ -161,20 +179,28 @@ module datapath
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                  PIPELINE : WRITEBACK                                     //
+    //                                   PIPELINE : WRITEBACK                                    //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    // Maybe move this to memory stage?????
     assign jump_addr = { pc_plus8[31:28], decode_bus.d_instruction[25:0], 2'b00 };
-    assign pc_plus8  = add(decode_bus.d_pc_plus4, 32'd4);
+    assign pc_plus8  = add(memory_bus.m_pc_plus4, 32'd4);
 
+    // Bus Inputs
+    assign writeback_bus.m_dmem_rd    = dmem_rd;
+    assign writeback_bus.m_alu_out    = memory_bus.m_alu_out;
+    assign writeback_bus.m_rf_wa      = memory_bus.m_rf_wa;
+    assign writeback_bus.m_rf_we;     = memory_bus.m_rf_we;
+    assign writeback_bus.m_sel_result = memory_bus.m_sel_result;
+    
     mux4 #(32) MUX_RESULT
     ( 
-        .a          (dmem_rd), 
-        .b          (alu_out), 
-        .c          (pc_plus4), 
+        .a          (writeback_bus.w_dmem_rd),      // From writeback stage
+        .b          (writeback_bus.w_alu_out),      // From writeback stage
+        .c          (pc_plus8),                     // From writeback stage
         .d          (ZERO32), 
-        .sel        (control_bus.sel_result), 
-        .y          (result) 
+        .sel        (writeback_bus.w_sel_result),   // From writeback stage
+        .y          (result)                        // To fetch + execute stages
     );
 
     writeback_reg WRITEBACK_REGISTER
