@@ -20,10 +20,8 @@ module tb_system;
     logic32   pc;
     logic10   dmem_addr;
     logic32   dmem_rd;
-`ifdef VALIDATION
     logic5    rf_ra;
     logic32   rf_rd;
-`endif
 
     // Testbench variables
     logic16      counter;
@@ -81,7 +79,7 @@ module tb_system;
         else begin
 
             // Stop simulation after program ends
-            if (counter == MAX+1) begin
+            if (instruction == 32'h0800_0015) begin
                 $stop;
             end
 

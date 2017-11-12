@@ -30,17 +30,13 @@ module tb_datapath;
     integer fail_count;
     integer instructions_tested;
 
-`ifdef VALIDATION
     DebugBus debug_bus();
-`endif
 
     // DUT
     datapath DUT
     (
-`ifdef VALIDATION
         .debug_in           (debug_bus.InputBus),
         .debug_out          (debug_bus.OutputBus),
-`endif
         .clock              (clock),
         .reset              (reset),
         .instruction        (instruction),

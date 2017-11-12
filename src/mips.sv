@@ -11,10 +11,8 @@ module mips
 
 (   input           clock, reset,
     input   [31:0]  instruction, dmem_rd,
-`ifdef VALIDATION
     DebugBus.InputBus  debug_in,
     DebugBus.OutputBus debug_out,
-`endif
     output          dmem_we,
     output  [31:0]  pc, alu_out, dmem_wd    );
 
@@ -27,12 +25,15 @@ module mips
     logic         zero, sel_alu_b, rf_we;
     logic [1:0]   sel_pc, sel_result, sel_wa;
 
+    // Decode
+    logic32       d_instruction;
+
     // Internal bus between control unit and datapath
     ControlBus control_bus();
 
     // Wiring
-    assign opcode  = instruction[31:26];
-    assign funct   = instruction[5:0];
+    assign opcode  = d_instruction[31:26];
+    assign funct   = d_instruction[5:0];
     assign dmem_we = control_bus.dmem_we;
 
     control_unit CU 
@@ -51,10 +52,9 @@ module mips
         .pc             (pc),
         .alu_out        (alu_out),
         .dmem_wd        (dmem_wd),
-`ifdef VALIDATION
+        .d_instruction  (d_instruction),
         .debug_in       (debug_in),
         .debug_out      (debug_out),
-`endif
         .control_bus    (control_bus.Receiver)
     );
 
@@ -175,10 +175,8 @@ module system_debug
     output [31:0] dmem_wd, alu_out,
     output        dmem_we,
     // Validation outputs
-`ifdef VALIDATION
     input  [4:0]  rf_ra,
     output [31:0] rf_rd,
-`endif
     // Extra debug outputs
     output [31:0] instruction,
     output [31:0] pc,
@@ -187,19 +185,15 @@ module system_debug
 
     assign dmem_addr = alu_out[9:0];
 
-`ifdef VALIDATION
     // Debug bus
     DebugBus debug_bus();
     assign debug_bus.rf_ra = rf_ra;
     assign rf_rd = debug_bus.rf_rd;
-`endif
 
     mips MIPS 
     (
-`ifdef VALIDATION
         .debug_in       (debug_bus.InputBus),
         .debug_out      (debug_bus.OutputBus),
-`endif
         .clock          (clock), 
         .reset          (reset), 
         .pc             (pc), 

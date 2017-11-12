@@ -25,13 +25,10 @@ module datapath
     import global_functions::*;
     import pipeline_pkg::*;
 
-    // Buses
-    FetchBus fetch_bus;
-
     // Internal wires
     logic5   wa, ra0, ra1, wa0, wa1;                    // Register file
     logic16  imm;                                       // Immediate value before sign extend
-    logic32  pc_next, pc_plus4, pc_plus8, pc_branch;    // PC addresses
+    logic32  pc_next, pc_plus4, pc_branch;              // PC addresses
     logic32  jump_addr;                                 // Jump address
     logic32  sign_imm, sign_imm_sh;                     // After sign extend
     logic32  alu_a, alu_b, result;                      // ALU
@@ -43,40 +40,13 @@ module datapath
     assign wa1          = d_instruction[15:11];           // R-Type
     assign imm          = d_instruction[15:0];
     // MIPS instructions always have lower 2 bits zero, word aligned
-    assign jump_addr    = { pc_plus8[31:28], d_instruction[25:0], 2'b00 };
+    assign jump_addr    = { d_pc_plus4[31:28], d_instruction[25:0], 2'b00 };
 
     // Helper functions instead of modules
     assign sign_imm     = sign_extend(imm);
     assign sign_imm_sh  = shift_left_2(sign_imm);
     assign pc_plus4     = add(pc, 32'd4);
-    assign pc_plus8     = add(d_pc_plus4, 32'd4);
     assign pc_branch    = add(d_pc_plus4, sign_imm_sh);
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                            FETCH                                          //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    mux4 #(32) MUX_PC
-    ( 
-        .a          (pc_plus4),             // This should not be the output of DECODE, rather FETCH
-        .b          (pc_branch), 
-        .c          (jump_addr), 
-        .d          (result), 
-        .sel        (control_bus.sel_pc), 
-        .y          (pc_next)
-    );
-
-    // Bus Inputs
-    assign fetch_bus.w_pc = pc_next;
-    // Bus Outputs
-    assign pc = fetch_bus.f_pc;
-    
-    fetch_reg FETCH_REGISTER
-    (
-        .fetch_bus  (fetch_bus),
-        .clock      (clock),
-        .reset      (reset)
-    );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                    PIPELINE : DECODE                                      //
@@ -134,10 +104,38 @@ module datapath
     ( 
         .a          (dmem_rd), 
         .b          (alu_out), 
-        .c          (pc_plus4), 
+        .c          (d_pc_plus4), 
         .d          (ZERO32), 
         .sel        (control_bus.sel_result), 
         .y          (result) 
+    );
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                  PC LOGIC BLOCKS                                          //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    mux4 #(32) MUX_PC
+    ( 
+        .a          (pc_plus4),             // This should not be the output of DECODE, rather FETCH
+        .b          (pc_branch), 
+        .c          (jump_addr), 
+        .d          (result), 
+        .sel        (control_bus.sel_pc), 
+        .y          (pc_next)
+    );
+
+    // Bus
+    FetchBus fetch_bus;
+    // Bus Inputs
+    assign fetch_bus.w_pc = pc_next;
+    // Bus Outputs
+    assign pc = fetch_bus.f_pc;
+    
+    fetch_reg FETCH_REGISTER
+    (
+        .fetch_bus  (fetch_bus),
+        .clock      (clock),
+        .reset      (reset)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
