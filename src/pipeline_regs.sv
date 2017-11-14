@@ -44,6 +44,7 @@ module execute_reg
 
     // Packages
     import pipeline_pkg::ExecuteBus;
+    import global_types::*;
 
 (   input       clock, reset,
     ExecuteBus  execute_bus    );
@@ -53,7 +54,6 @@ module execute_reg
         if (reset) begin
             execute_bus.e_rd0       <= 0;
             execute_bus.e_rd1       <= 0;
-            execute_bus.e_ra1       <= 0;
             execute_bus.e_wa0       <= 0;
             execute_bus.e_wa1       <= 0;
             execute_bus.e_sign_imm  <= 0;
@@ -61,7 +61,6 @@ module execute_reg
         end else begin
             execute_bus.e_rd0       <= execute_bus.d_rd0;
             execute_bus.e_rd1       <= execute_bus.d_rd1;
-            execute_bus.e_ra1       <= execute_bus.d_ra1;
             execute_bus.e_wa0       <= execute_bus.d_wa0;
             execute_bus.e_wa1       <= execute_bus.d_wa1;
             execute_bus.e_sign_imm  <= execute_bus.d_sign_imm;
@@ -96,6 +95,7 @@ module memory_reg
 
     // Packages
     import pipeline_pkg::MemoryBus;
+    import global_types::*;
 
 (   input       clock, reset,
     MemoryBus   memory_bus    );
@@ -107,11 +107,13 @@ module memory_reg
             memory_bus.m_dmem_wd       <= 0;
             memory_bus.m_rf_wa         <= 0;
             memory_bus.m_pc_branch     <= 0;
+            memory_bus.m_pc_plus4      <= 0;
         end else begin
             memory_bus.m_alu_out       <= memory_bus.e_alu_out;
             memory_bus.m_dmem_wd       <= memory_bus.e_dmem_wd;
             memory_bus.m_rf_wa         <= memory_bus.e_rf_wa;
             memory_bus.m_pc_branch     <= memory_bus.e_pc_branch;
+            memory_bus.m_pc_plus4      <= memory_bus.e_pc_plus4;
         end
     end
 
@@ -146,6 +148,7 @@ module writeback_reg
 
     // Packages
     import pipeline_pkg::WritebackBus;
+    import global_types::*;
 
 (   input           clock, reset,
     WritebackBus    writeback_bus    );
@@ -156,10 +159,12 @@ module writeback_reg
             writeback_bus.w_dmem_rd     <= 0;
             writeback_bus.w_alu_out     <= 0;
             writeback_bus.w_rf_wa       <= 0;
+            writeback_bus.w_pc_plus4    <= 0;
         end else begin
             writeback_bus.w_dmem_rd     <= writeback_bus.m_dmem_rd;
             writeback_bus.w_alu_out     <= writeback_bus.m_alu_out;
             writeback_bus.w_rf_wa       <= writeback_bus.m_rf_wa;
+            writeback_bus.w_pc_plus4    <= writeback_bus.m_pc_plus4;
         end
     end
 

@@ -32,7 +32,6 @@ package pipeline_pkg;
         // Inputs
         logic32       d_rd0;
         logic32       d_rd1;
-        logic5        d_ra1;
         logic5        d_wa0;
         logic5        d_wa1;
         logic32       d_sign_imm;
@@ -40,7 +39,6 @@ package pipeline_pkg;
         // Outputs
         logic32       e_rd0;
         logic32       e_rd1;
-        logic5        e_ra1;
         logic5        e_wa0;
         logic5        e_wa1;
         logic32       e_sign_imm;
@@ -71,11 +69,13 @@ package pipeline_pkg;
         logic32       e_dmem_wd;
         logic5        e_rf_wa;
         logic32       e_pc_branch;
+        logic32       e_pc_plus4;
         // Outputs
         logic32       m_alu_out;
         logic32       m_dmem_wd;
         logic5        m_rf_wa;
         logic32       m_pc_branch;
+        logic32       m_pc_plus4;
         // Control Inputs
         rf_we_t       e_rf_we;
         sel_pc_t      e_sel_pc;
@@ -99,10 +99,12 @@ package pipeline_pkg;
         logic32       m_dmem_rd;
         logic32       m_alu_out;
         logic5        m_rf_wa;
+        logic32       m_pc_plus4;
         // Outputs
         logic32       w_dmem_rd;
         logic32       w_alu_out;
         logic5        w_rf_wa;
+        logic32       w_pc_plus4;
         // Control Inputs
         rf_we_t       m_rf_we;
         sel_result_t  m_sel_result;

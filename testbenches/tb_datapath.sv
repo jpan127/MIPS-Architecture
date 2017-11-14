@@ -2,7 +2,12 @@
 `include "defines.svh"
 
 // Wait an entire clock cycle
-`define tick            #10;
+`ifdef PIPELINE
+    `define tick        #50;
+`else 
+    `define tick        #10;
+`endif
+
 // Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
@@ -11,12 +16,14 @@ module tb_datapath;
     // Packages
     import testbench_globals::*;
     import global_types::*;
+    import pipeline_pkg::*;
 
     // DUT Ports
     ControlBus control_bus();
     logic      clock, reset;
-    logic32    instruction;
+    logic32    instruction, d_instruction;
     logic32    dmem_rd;
+    logic      dmem_we;
     logic32    pc, alu_out, dmem_wd;
 
     // Testbench Variables
@@ -40,7 +47,9 @@ module tb_datapath;
         .clock              (clock),
         .reset              (reset),
         .instruction        (instruction),
+        .d_instruction      (d_instruction),
         .dmem_rd            (dmem_rd),
+        .dmem_we            (dmem_we),
         .pc                 (pc),
         .alu_out            (alu_out),
         .dmem_wd            (dmem_wd),
@@ -68,6 +77,7 @@ module tb_datapath;
         control_bus.Receiver.sel_result  = SEL_RESULT_DONT_CARE;
         control_bus.Receiver.sel_wa      = SEL_WA_DONT_CARE;
         control_bus.Receiver.alu_ctrl    = DONT_CAREac;
+        control_bus.Receiver.dmem_we     = DMEM_WE_DISABLE;
         clock               = 0;
         instruction         = 0;
         dmem_rd             = 0;
@@ -483,44 +493,47 @@ module tb_datapath;
         // Reset
         `reset_system
 
-        // Test ADD
-        test_add;
+        load_reg(REG_29, 16'd0);
+        // look at the data going into alu, not correct
 
-        // Test ADDI
-        test_addi;
+        // // Test ADD
+        // test_add;
 
-        // Test AND
-        test_and;
+        // // Test ADDI
+        // test_addi;
 
-        // Test BEQ
-        test_branch;
+        // // Test AND
+        // test_and;
 
-        // Test DIVU
-        test_divide;
+        // // Test BEQ
+        // test_branch;
 
-        // Test J
-        test_j;
+        // // Test DIVU
+        // test_divide;
 
-        // Test JAL
-        test_jal;
+        // // Test J
+        // test_j;
 
-        // Test JR
-        test_jr;
+        // // Test JAL
+        // test_jal;
 
-        // Test LW
-        test_lw;
+        // // Test JR
+        // test_jr;
 
-        // Test MULTU
-        test_multiply;
+        // // Test LW
+        // test_lw;
 
-        // Test SLT
-        test_slt;
+        // // Test MULTU
+        // test_multiply;
 
-        // Test SUB
-        test_sub;
+        // // Test SLT
+        // test_slt;
 
-        // Test SW
-        test_sw;
+        // // Test SUB
+        // test_sub;
+
+        // // Test SW
+        // test_sw;
 
         // Results
         $display("///////////////////////////////////////////////////////////////////////");

@@ -23,6 +23,7 @@ interface ControlBus;
         input  sel_pc,
         input  sel_result,
         input  sel_wa,
+        input  dmem_we,
         output zero
     );
 

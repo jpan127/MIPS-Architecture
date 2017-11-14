@@ -9,12 +9,12 @@
 /// Just the CPU
 module mips 
 
-(   input           clock, reset,
-    input   [31:0]  instruction, dmem_rd,
-    DebugBus.InputBus  debug_in,
-    DebugBus.OutputBus debug_out,
-    output          dmem_we,
-    output  [31:0]  pc, alu_out, dmem_wd    );
+(   input               clock, reset,
+    input   [31:0]      instruction, dmem_rd,
+    DebugBus.InputBus   debug_in,
+    DebugBus.OutputBus  debug_out,
+    output              dmem_we,
+    output  [31:0]      pc, alu_out, dmem_wd    );
 
     // Packages
     import global_types::*;
@@ -34,7 +34,6 @@ module mips
     // Wiring
     assign opcode  = d_instruction[31:26];
     assign funct   = d_instruction[5:0];
-    assign dmem_we = control_bus.dmem_we;
 
     control_unit CU 
     (
@@ -49,6 +48,7 @@ module mips
         .reset          (reset),
         .instruction    (instruction),
         .dmem_rd        (dmem_rd),
+        .dmem_we        (dmem_we),
         .pc             (pc),
         .alu_out        (alu_out),
         .dmem_wd        (dmem_wd),
