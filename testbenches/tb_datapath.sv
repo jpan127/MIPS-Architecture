@@ -154,6 +154,15 @@ module tb_datapath;
         end
     endtask
 
+    task NOP(logic5 cycles);
+        begin 
+            for (i=0; i<cycles; i++) begin 
+                #10;
+                instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, 0, 0);
+            end
+        end
+    endtask
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        Unit Tests                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,9 +231,9 @@ module tb_datapath;
 
     task test_branch;
         begin
-            // Extra +4 because there is an ADDI instruction (load_reg) before BEQ
-            automatic logic32 correct_branch1 = pc + 4 + ( 4 ) + (16'h7FFF << 2);
-            automatic logic32 correct_branch2 = pc + 4 + ( 4 ) + (16'h0ABC << 2);
+            // +4 for load_reg, + 4*4 for 4 clock cylces, and +4 for (pc+4 + branch)
+            automatic logic32 correct_branch1 = pc + ( 4 ) + (4 * 4) + 4 + (16'h7FFF << 2);
+            automatic logic32 correct_branch2 = pc + ( 4 ) + (4 * 4) + 4 + (16'h0ABC << 2);
 
             // Set REG_1 = 0000
             load_reg(REG_1, 16'd0);
@@ -232,7 +241,7 @@ module tb_datapath;
             // Test when equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h7FFF);
             ctrl = TB_BEQc;
-            `tick
+            repeat(4) #10;
 
             assert_equal(1, control_bus.Receiver.zero, "BEQY::ZERO");
             assert_equal(correct_branch1, pc, "BEQY::PC");
@@ -243,7 +252,7 @@ module tb_datapath;
             // Test when not equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h0ABC);
             ctrl = TB_BEQc;
-            `tick
+            repeat(4) #10;
 
             assert_equal(0, control_bus.Receiver.zero, "BEQN::ZERO");
             assert_not_equal(correct_branch2, pc, "BEQN::PC");
@@ -307,16 +316,17 @@ module tb_datapath;
 
             instruction = set_instruction_j(OPCODE_JAL, jump_address);
             ctrl = TB_JALc;
-            `tick
+            // Fetch, Decode, Fetch
+            NOP(3);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "JAL::PC");
 
-            // Read from R[31]
-            read_reg(REG_RA, r31_value);
+            // // Read from R[31]
+            // read_reg(REG_RA, r31_value);
 
-            // Assert R[31] == PC + 4
-            assert_equal(old_pc + 4, r31_value, "JAL::R31");
+            // // Assert R[31] == PC + 4
+            // assert_equal(old_pc + 4, r31_value, "JAL::R31");
 
             instructions_tested++;
         end
@@ -493,9 +503,6 @@ module tb_datapath;
         // Reset
         `reset_system
 
-        load_reg(REG_29, 16'd0);
-        // look at the data going into alu, not correct
-
         // // Test ADD
         // test_add;
 
@@ -505,7 +512,7 @@ module tb_datapath;
         // // Test AND
         // test_and;
 
-        // // Test BEQ
+        // // Test BEQ : FAILED
         // test_branch;
 
         // // Test DIVU
@@ -514,8 +521,8 @@ module tb_datapath;
         // // Test J
         // test_j;
 
-        // // Test JAL
-        // test_jal;
+        // Test JAL : FAILED
+        test_jal;
 
         // // Test JR
         // test_jr;

@@ -75,6 +75,10 @@ module datapath
     //                                     PIPELINE : DECODE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    // [TODO] Move branch logic from after execute to before execute
+    logic branch;
+    assign branch = control_bus.branch & (execute_bus.d_rd0 == execute_bus.d_rd1);
+
     assign jump_addr = { decode_bus.d_pc_plus4[31:28], decode_bus.d_instruction[25:0], 2'b00 };
 
     // Bus Inputs

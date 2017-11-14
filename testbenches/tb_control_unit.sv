@@ -12,7 +12,7 @@ module tb_control_unit;
 
     // Testbench variables
     logic        clock;
-    logic [8:0]  ctrl;
+    logic [9:0]  ctrl;
     integer      success_count;
     integer      fail_count;
 
@@ -23,7 +23,8 @@ module tb_control_unit;
         control_bus.Sender.sel_alu_b,      // 1 bit
         control_bus.Sender.dmem_we,        // 1 bit
         control_bus.Sender.sel_result,     // 2 bits
-        control_bus.Sender.sel_pc          // 2 bits
+        control_bus.Sender.sel_pc,         // 2 bits
+        control_bus.Sender.branch          // 1 bit
     };
 
     // Instructions
@@ -70,7 +71,7 @@ module tb_control_unit;
     initial begin forever #5 clock = ~clock; end
 
     // Asserts the correct control logic is beign set
-    logic [8:0] c;
+    logic [9:0] c;
     task test_instruction;
         input logic [11:0]  instruction;
         input control_t     control;
@@ -114,7 +115,7 @@ module tb_control_unit;
 
         // Branch if Equal, Not Equal
         control_bus.Sender.zero = 0;
-        test_instruction(BEQ, BEQNc, "BEQN");
+        test_instruction(BEQ, BEQc, "BEQN");
 
         // Branch if Equal, Equal
         control_bus.Sender.zero = 1;

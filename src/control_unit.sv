@@ -15,10 +15,10 @@ module control_unit
 
     // Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
     logic2  alu_op;
-    logic11 ctrl;
+    logic12 ctrl;
 
     // Fail when undefined opcode
-    localparam CTRL_UNDEFINED = 11'bX;
+    localparam CTRL_UNDEFINED = 12'bX;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,7 +30,8 @@ module control_unit
         control_bus.dmem_we,        // 1 bit
         control_bus.sel_result,     // 2 bits
         control_bus.sel_pc,         // 2 bits
-        alu_op                              // 2 bits
+        control_bus.branch,         // 1 bit
+        alu_op                      // 2 bits
     } = ctrl;
 
     // Decodes opcode to set ctrl signals
@@ -39,7 +40,7 @@ module control_unit
             // I-TYPE
             OPCODE_LW:       ctrl = LWc;
             OPCODE_SW:       ctrl = SWc;
-            OPCODE_BEQ:      ctrl = (control_bus.zero) ? BEQc : BEQNc;
+            OPCODE_BEQ:      ctrl = BEQc;
             OPCODE_ADDI:     ctrl = ADDIc;
             // J-TYPE
             OPCODE_J:        ctrl = Jc;

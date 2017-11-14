@@ -13,6 +13,7 @@ interface ControlBus;
     sel_result_t    sel_result;
     sel_wa_t        sel_wa;
     dmem_we_t       dmem_we;
+    logic           branch;
     logic           zero;
 
     modport Receiver
@@ -24,6 +25,7 @@ interface ControlBus;
         input  sel_result,
         input  sel_wa,
         input  dmem_we,
+        input  branch,
         output zero
     );
 
@@ -35,6 +37,7 @@ interface ControlBus;
         output sel_pc,
         output sel_result,
         output sel_wa,
+        output branch,
         input  zero,
         output dmem_we
     );
