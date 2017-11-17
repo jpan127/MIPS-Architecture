@@ -4,7 +4,7 @@ module flusher
 
 (   input        clock, reset,
     input [31:0] instruction,
-    output       flush        );
+    output logic f_flush, d_flush, e_flush, m_flush, w_flush );
 
     import global_types::*;
 
@@ -14,16 +14,26 @@ module flusher
 
     always_ff @(posedge clock, posedge reset) begin
         if (reset) begin 
-            flust <= 0;
+            f_flush <= 0;
+            d_flush <= 0;
+            e_flush <= 0;
+            m_flush <= 0;
+            w_flush <= 0;
         end
+        // Jump or Jump And Link
         else if (opcode == OPCODE_J || opcode == OPCODE_JAL) begin 
-            flush <= 1;
+            // f_flush <= 1;
         end
+        // Jump Register
         else if (opcode == OPCODE_R && funct == FUNCT_JR) begin 
-            flush <= 1;
+            // f_flush <= 1;
         end
         else begin 
-            flush <= 0;
+            f_flush <= 0;
+            d_flush <= 0;
+            e_flush <= 0;
+            m_flush <= 0;
+            w_flush <= 0;
         end
     end
 

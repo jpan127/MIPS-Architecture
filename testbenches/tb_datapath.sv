@@ -60,12 +60,12 @@ module tb_datapath;
     reg  [11:0] ctrl;
     always_comb begin
         {
-            control_bus.Receiver.rf_we,          // 1 bit
-            control_bus.Receiver.sel_wa,         // 2 bits
-            control_bus.Receiver.sel_alu_b,      // 1 bit
-            control_bus.Receiver.sel_result,     // 2 bits
-            control_bus.Receiver.sel_pc,         // 2 bits
-            control_bus.Receiver.alu_ctrl        // 4 bits
+            control_bus.rf_we,          // 1 bit
+            control_bus.sel_wa,         // 2 bits
+            control_bus.sel_alu_b,      // 1 bit
+            control_bus.sel_result,     // 2 bits
+            control_bus.sel_pc,         // 2 bits
+            control_bus.alu_ctrl        // 4 bits
         } = ctrl;
     end
 
@@ -298,7 +298,7 @@ module tb_datapath;
 
             instruction = set_instruction_j(OPCODE_J, jump_address);
             ctrl = TB_Jc;
-            `tick
+            NOP(1);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "J");
@@ -317,7 +317,7 @@ module tb_datapath;
             instruction = set_instruction_j(OPCODE_JAL, jump_address);
             ctrl = TB_JALc;
             // Fetch, Decode, Fetch
-            NOP(3);
+            NOP(1);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "JAL::PC");
@@ -503,44 +503,44 @@ module tb_datapath;
         // Reset
         `reset_system
 
-        // // Test ADD
-        // test_add;
+        // Test ADD
+        test_add;
 
-        // // Test ADDI
-        // test_addi;
+        // Test ADDI
+        test_addi;
 
-        // // Test AND
-        // test_and;
+        // Test AND
+        test_and;
 
-        // // Test BEQ : FAILED
-        // test_branch;
+        // Test BEQ
+        test_branch;
 
-        // // Test DIVU
-        // test_divide;
+        // Test DIVU
+        test_divide;
 
-        // // Test J
-        // test_j;
+        // Test J
+        test_j;
 
-        // Test JAL : FAILED
+        // Test JAL
         test_jal;
 
-        // // Test JR
-        // test_jr;
+        // Test JR
+        test_jr;
 
-        // // Test LW
-        // test_lw;
+        // Test LW
+        test_lw;
 
-        // // Test MULTU
-        // test_multiply;
+        // Test MULTU
+        test_multiply;
 
-        // // Test SLT
-        // test_slt;
+        // Test SLT
+        test_slt;
 
-        // // Test SUB
-        // test_sub;
+        // Test SUB
+        test_sub;
 
-        // // Test SW
-        // test_sw;
+        // Test SW
+        test_sw;
 
         // Results
         $display("///////////////////////////////////////////////////////////////////////");

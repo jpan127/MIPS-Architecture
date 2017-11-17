@@ -11,11 +11,14 @@ module datapath
 
 (   input           clock, reset,
     input   [31:0]  instruction,
+    // To / From the DMEM
     input   [31:0]  dmem_rd,
     output          dmem_we,
+    // To / From memories
     output  [31:0]  pc, alu_out, dmem_wd,
-    // Decode
+    // After decode, to Control Unit
     output  [31:0]  d_instruction,                      // Needs to be outputted to the CU so the CU gets the delay too
+    output          branch,
     // Interfaces
     DebugBus.InputBus       debug_in,
     DebugBus.OutputBus      debug_out,
@@ -34,11 +37,11 @@ module datapath
     WritebackBus writeback_bus;
 
     // Internal wires
-    logic5   ra0, ra1;                                  // Register file
+    logic5   ra0, ra1;                       // Register file
     logic32  pc_plus4;                       // PC addresses
-    logic32  jump_addr;                                 // Jump address
+    logic32  jump_addr;                      // Jump address
     logic32  sign_imm_sh;                     // After sign extend
-    logic32  alu_b, result;                      // ALU
+    logic32  alu_b, result;                  // ALU
 
     // Datapath outputs
     assign pc               = fetch_bus.f_pc;
@@ -48,11 +51,34 @@ module datapath
     assign alu_out          = memory_bus.e_alu_out;
     assign dmem_wd          = memory_bus.e_dmem_wd;
 
+    // Hazard Controller
+    logic f_flush, d_flush, e_flush, m_flush, w_flush;
+    flusher FLUSHER
+    (
+        .clock       (clock),
+        .reset       (reset),
+        .instruction (instruction),
+        .f_flush     (f_flush), 
+        .d_flush     (d_flush), 
+        .e_flush     (e_flush), 
+        .m_flush     (m_flush), 
+        .w_flush     (w_flush)
+    );
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     PIPELINE : FETCH                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    assign pc_plus4 = add(pc, 32'd4);                                               // From fetch
+    logic  jump;
+    logic2 sel_pc;
+
+    assign pc_plus4  = add(fetch_bus.f_pc, 32'd4);                                  // From fetch
+
+    // If the instruction coming from IMEM is a jump type, set the PC to jump before decode
+    assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL);
+    assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (memory_bus.m_sel_pc);
+    assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
+
 
     mux4 #(32) MUX_PC
     ( 
@@ -60,26 +86,23 @@ module datapath
         .b          (memory_bus.m_pc_branch),                                       // From memory
         .c          (jump_addr),                                                    // From memory
         .d          (result),                                                       // From writeback
-        .sel        (memory_bus.m_sel_pc),                                          // From memory
+        .sel        (sel_pc),                                                       // From memory
         .y          (fetch_bus.w_pc)
     );
 
     fetch_reg FETCH_REGISTER
     (
-        .fetch_bus  (fetch_bus),
         .clock      (clock),
-        .reset      (reset)
+        .reset      (reset),
+        .flush      (f_flush),
+        .fetch_bus  (fetch_bus)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     PIPELINE : DECODE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // [TODO] Move branch logic from after execute to before execute
-    logic branch;
-    assign branch = control_bus.branch & (execute_bus.d_rd0 == execute_bus.d_rd1);
-
-    assign jump_addr = { decode_bus.d_pc_plus4[31:28], decode_bus.d_instruction[25:0], 2'b00 };
+    assign branch = (execute_bus.d_rd0 == execute_bus.d_rd1);
 
     // Bus Inputs
     assign decode_bus.f_instruction = instruction;                                  // From IMEM
@@ -89,6 +112,7 @@ module datapath
     (
         .clock      (clock),
         .reset      (reset),
+        .flush      (d_flush),
         .decode_bus (decode_bus)
     );
 
@@ -131,6 +155,7 @@ module datapath
     (
         .clock       (clock),
         .reset       (reset),
+        .flush       (e_flush),
         .execute_bus (execute_bus)
     );
 
@@ -186,6 +211,7 @@ module datapath
     (
         .clock       (clock),
         .reset       (reset),
+        .flush       (m_flush),
         .memory_bus  (memory_bus)
     );
 
@@ -218,6 +244,7 @@ module datapath
     (
         .clock         (clock),
         .reset         (reset),
+        .flush         (w_flush),
         .writeback_bus (writeback_bus)
     );
 

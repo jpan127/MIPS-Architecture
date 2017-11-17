@@ -39,6 +39,7 @@ module mips
     (
         .opcode         (opcode),
         .funct          (funct),
+        .branch         (branch),
         .control_bus    (control_bus.Sender)
     );
 
@@ -53,6 +54,7 @@ module mips
         .alu_out        (alu_out),
         .dmem_wd        (dmem_wd),
         .d_instruction  (d_instruction),
+        .branch         (branch),
         .debug_in       (debug_in),
         .debug_out      (debug_out),
         .control_bus    (control_bus.Receiver)
