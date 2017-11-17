@@ -40,7 +40,7 @@ module datapath
     logic5   ra0, ra1;                       // Register file
     logic32  pc_plus4;                       // PC addresses
     logic32  jump_addr;                      // Jump address
-    logic32  sign_imm_sh;                     // After sign extend
+    logic32  sign_imm_sh;                    // After sign extend
     logic32  alu_b, result;                  // ALU
 
     // Datapath outputs

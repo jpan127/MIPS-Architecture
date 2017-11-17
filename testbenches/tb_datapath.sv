@@ -2,6 +2,8 @@
 `include "defines.svh"
 
 // Wait an entire clock cycle
+`define tick1 #10;
+
 `ifdef PIPELINE
     `define tick        #50;
 `else 
@@ -316,17 +318,20 @@ module tb_datapath;
 
             instruction = set_instruction_j(OPCODE_JAL, jump_address);
             ctrl = TB_JALc;
-            // Fetch, Decode, Fetch
+            // Fetch
             NOP(1);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "JAL::PC");
 
-            // // Read from R[31]
-            // read_reg(REG_RA, r31_value);
+            // Decode, Execute, Memory, Writeback
+            NOP(4);
 
-            // // Assert R[31] == PC + 4
-            // assert_equal(old_pc + 4, r31_value, "JAL::R31");
+            // Read from R[31]
+            read_reg(REG_RA, r31_value);
+
+            // Assert R[31] == PC + 8
+            assert_equal(old_pc + 8, r31_value, "JAL::R31");
 
             instructions_tested++;
         end
@@ -493,6 +498,55 @@ module tb_datapath;
         end
     endtask
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                    Pipeline Tests                                         //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    task pipeline_test_1;
+        begin
+            automatic logic32 stack_frame = -16'd8;
+            automatic logic32 reg_value   = 0;
+            automatic logic32 input_jump_address = (32'b1000_0000);
+            automatic logic32 correct_jump_address = input_jump_address << 2;
+
+            // 1. Load 4 into R[5]
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'd4);
+            ctrl = TB_ADDIc;
+            `tick1
+
+            // 2. Jump to 0xABCD
+            instruction = set_instruction_j(OPCODE_JAL, input_jump_address);
+            ctrl = TB_JALc;
+            `tick1
+
+            assert_equal(correct_jump_address, pc, "PIPELINE_TEST1::PC");
+
+            // If jumped correctly
+            if (correct_jump_address == pc) begin 
+                // Decrement Stack Pointer
+                instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, stack_frame);
+                ctrl = TB_ADDIc;
+                `tick1
+            end
+            // If failed to jump
+            else begin 
+                instruction = set_instruction_r(OPCODE_R, REG_6, REG_7, REG_ZERO, ignore_shamt, FUNCT_ADD);
+                ctrl = TB_ADDc;
+                `tick1
+            end
+
+            // Execute, Memory, Writeback
+            NOP(3);
+
+            instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_SP, 16'd0);
+            ctrl = TB_SWc;
+            `tick
+            reg_value = dmem_wd;
+
+            assert_equal(32'h200 - 32'h8, reg_value, "PIPELINE_TEST1::REG_SP");
+        end
+    endtask
+
     // Generate #10 period clock
     always #5 clock = ~clock;
 
@@ -503,44 +557,47 @@ module tb_datapath;
         // Reset
         `reset_system
 
-        // Test ADD
-        test_add;
+        ////// Pipeline Tests
+        pipeline_test_1;
 
-        // Test ADDI
-        test_addi;
+        // // Test ADD
+        // test_add;
 
-        // Test AND
-        test_and;
+        // // Test ADDI
+        // test_addi;
 
-        // Test BEQ
-        test_branch;
+        // // Test AND
+        // test_and;
 
-        // Test DIVU
-        test_divide;
+        // // Test BEQ
+        // test_branch;
 
-        // Test J
-        test_j;
+        // // Test DIVU
+        // test_divide;
 
-        // Test JAL
-        test_jal;
+        // // Test J
+        // test_j;
 
-        // Test JR
-        test_jr;
+        // // Test JAL
+        // test_jal;
 
-        // Test LW
-        test_lw;
+        // // Test JR
+        // test_jr;
 
-        // Test MULTU
-        test_multiply;
+        // // Test LW
+        // test_lw;
 
-        // Test SLT
-        test_slt;
+        // // Test MULTU
+        // test_multiply;
 
-        // Test SUB
-        test_sub;
+        // // Test SLT
+        // test_slt;
 
-        // Test SW
-        test_sw;
+        // // Test SUB
+        // test_sub;
+
+        // // Test SW
+        // test_sw;
 
         // Results
         $display("///////////////////////////////////////////////////////////////////////");
