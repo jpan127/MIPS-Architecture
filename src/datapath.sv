@@ -29,6 +29,9 @@ module datapath
     import global_functions::*;
     import pipeline_pkg::*;
 
+    localparam UNUSED_5  = 5'd0;
+    localparam UNUSED_32 = 32'd0;
+
     // Buses
     FetchBus     fetch_bus;
     DecodeBus    decode_bus;
@@ -42,6 +45,7 @@ module datapath
     logic32  jump_addr;                      // Jump address
     logic32  sign_imm_sh;                    // After sign extend
     logic32  alu_b, result;                  // ALU
+    logic32  branch_addr;
 
     // Datapath outputs
     assign pc               = fetch_bus.f_pc;
@@ -75,7 +79,7 @@ module datapath
     assign pc_plus4  = add(fetch_bus.f_pc, 32'd4);                                  // From fetch
 
     // If the instruction coming from IMEM is a jump type, set the PC to jump before decode
-    assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL);
+    assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL); // From fetch
     assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (memory_bus.m_sel_pc);
     assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
 
@@ -83,7 +87,7 @@ module datapath
     mux4 #(32) MUX_PC
     ( 
         .a          (pc_plus4),                                                     // From fetch
-        .b          (memory_bus.m_pc_branch),                                       // From memory
+        .b          (branch_addr),                                                  // From memory
         .c          (jump_addr),                                                    // From memory
         .d          (result),                                                       // From writeback
         .sel        (sel_pc),                                                       // From memory
@@ -102,8 +106,6 @@ module datapath
     //                                     PIPELINE : DECODE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    assign branch = (execute_bus.d_rd0 == execute_bus.d_rd1);
-
     // Bus Inputs
     assign decode_bus.f_instruction = instruction;                                  // From IMEM
     assign decode_bus.f_pc_plus4    = pc_plus4;                                     // From fetch
@@ -120,22 +122,29 @@ module datapath
     //                                    PIPELINE : EXECUTE                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    logic32 sign_imm;
+    // Branch logic + address
+    assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1);
+    assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
+    assign sign_imm_sh = shift_left_2(sign_imm);
+    assign branch_addr = add(decode_bus.d_pc_plus4, sign_imm_sh);                   // From decode
+
     // Bus Inputs
-    assign execute_bus.d_pc_plus4   = decode_bus.d_pc_plus4;                        // From decode
+    assign execute_bus.d_pc_plus4    = decode_bus.d_pc_plus4;                        // From decode
     // Split instruction
-    assign ra0                      = decode_bus.d_instruction[25:21];              // From decode
-    assign ra1                      = decode_bus.d_instruction[20:16];              // From decode
-    assign execute_bus.d_wa0        = decode_bus.d_instruction[20:16];              // From decode (I-Type)
-    assign execute_bus.d_wa1        = decode_bus.d_instruction[15:11];              // From decode (R-Type)
-    assign execute_bus.d_sign_imm   = sign_extend(decode_bus.d_instruction[15:0]);  // From decode
+    assign ra0                       = decode_bus.d_instruction[25:21];              // From decode
+    assign ra1                       = decode_bus.d_instruction[20:16];              // From decode
+    assign execute_bus.d_wa0         = decode_bus.d_instruction[20:16];              // From decode (I-Type)
+    assign execute_bus.d_wa1         = decode_bus.d_instruction[15:11];              // From decode (R-Type)
+    assign execute_bus.d_sign_imm    = sign_imm;
     // Store control signals
-    assign execute_bus.d_alu_ctrl   = control_bus.alu_ctrl;                         // From decode (control unit)
-    assign execute_bus.d_rf_we      = control_bus.rf_we;                            // From decode (control unit)
-    assign execute_bus.d_sel_alu_b  = control_bus.sel_alu_b;                        // From decode (control unit)
-    assign execute_bus.d_sel_pc     = control_bus.sel_pc;                           // From decode (control unit)
-    assign execute_bus.d_sel_result = control_bus.sel_result;                       // From decode (control unit)
-    assign execute_bus.d_sel_wa     = control_bus.sel_wa;                           // From decode (control unit)
-    assign execute_bus.d_dmem_we    = control_bus.dmem_we;                          // From decode (control unit)
+    assign execute_bus.d_alu_ctrl    = control_bus.alu_ctrl;                         // From decode (control unit)
+    assign execute_bus.d_rf_we       = control_bus.rf_we;                            // From decode (control unit)
+    assign execute_bus.d_sel_alu_b   = control_bus.sel_alu_b;                        // From decode (control unit)
+    assign execute_bus.d_sel_pc      = control_bus.sel_pc;                           // From decode (control unit)
+    assign execute_bus.d_sel_result  = control_bus.sel_result;                       // From decode (control unit)
+    assign execute_bus.d_sel_wa      = control_bus.sel_wa;                           // From decode (control unit)
+    assign execute_bus.d_dmem_we     = control_bus.dmem_we;                          // From decode (control unit)
 
     regfile RF  
     ( 
@@ -163,12 +172,9 @@ module datapath
     //                                     PIPELINE : MEMORY                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Shift sign-extended immediate left by 2
-    assign sign_imm_sh = shift_left_2(execute_bus.e_sign_imm);
 
     // Bus Inputs
     assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;                             // From execute
-    assign memory_bus.e_pc_branch  = add(execute_bus.e_pc_plus4, sign_imm_sh);      // From execute
     assign memory_bus.e_rf_we      = execute_bus.e_rf_we;                           // From execute
     assign memory_bus.e_sel_pc     = execute_bus.e_sel_pc;                          // From execute
     assign memory_bus.e_sel_result = execute_bus.e_sel_result;                      // From execute
@@ -181,7 +187,7 @@ module datapath
         .a          (execute_bus.e_wa0),                                            // From execute
         .b          (execute_bus.e_wa1),                                            // From execute
         .c          (REG_RA), 
-        .d          (REG_ZERO),                                                     // UNUSED
+        .d          (UNUSED_5),                                                     // UNUSED
         .sel        (execute_bus.e_sel_wa),                                         // From execute
         .y          (memory_bus.e_rf_wa)                                            // To memory
     );
@@ -235,7 +241,7 @@ module datapath
         .a          (writeback_bus.w_dmem_rd),                                      // From writeback
         .b          (writeback_bus.w_alu_out),                                      // From writeback
         .c          (pc_plus8),                                                     // From writeback
-        .d          (ZERO32),                                                       // UNUSED
+        .d          (UNUSED_32),                                                    // UNUSED
         .sel        (writeback_bus.w_sel_result),                                   // From writeback 
         .y          (result)                                                        // To fetch + execute
     );

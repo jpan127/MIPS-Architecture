@@ -68,13 +68,11 @@ package pipeline_pkg;
         logic32       e_alu_out;
         logic32       e_dmem_wd;
         logic5        e_rf_wa;
-        logic32       e_pc_branch;
         logic32       e_pc_plus4;
         // Outputs
         logic32       m_alu_out;
         logic32       m_dmem_wd;
         logic5        m_rf_wa;
-        logic32       m_pc_branch;
         logic32       m_pc_plus4;
         // Control Inputs
         rf_we_t       e_rf_we;

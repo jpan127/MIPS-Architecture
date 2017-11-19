@@ -535,15 +535,49 @@ module tb_datapath;
                 `tick1
             end
 
-            // Execute, Memory, Writeback
-            NOP(3);
+            // Decode, Execute, Memory, Writeback
+            NOP(4);
 
-            instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_SP, 16'd0);
+            assert_equal(32'h200 - 32'h8, DUT.RF.rf[REG_SP], "PIPELINE_TEST1::REG_SP");
+        end
+    endtask
+
+    task pipeline_test_2;
+        begin
+            automatic logic16 branch_else = 16'h0ABC;
+
+            // M[REG_SP + 4] = REG_5
+            instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_5, 16'd4);
             ctrl = TB_SWc;
-            `tick
-            reg_value = dmem_wd;
-
-            assert_equal(32'h200 - 32'h8, reg_value, "PIPELINE_TEST1::REG_SP");
+            `tick1
+            // M[REG_SP] = REG_RA
+            instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_RA, 16'd0);
+            ctrl = TB_SWc;
+            `tick1
+            // REG_8 = 2
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_8, 16'd2);
+            ctrl = TB_ADDIc;
+            `tick1
+            // Set REG_9 if REG_8 < REG_5
+            instruction = set_instruction_r(OPCODE_R, REG_8, REG_5, REG_9, ignore_shamt, FUNCT_SLT);
+            ctrl = TB_SLTc;
+            `tick1
+            // BEQ
+            instruction = set_instruction_i(OPCODE_BEQ, REG_9, REG_ZERO, branch_else);
+            ctrl = TB_BEQc;
+            `tick1
+            // Load 1 into REG_7
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_7, 16'd1);
+            ctrl = TB_ADDIc;
+            `tick1
+            // Add 8 to SP
+            instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, 16'd8);
+            ctrl = TB_ADDIc;
+            `tick1
+            // Jump to RA
+            instruction = set_instruction_j(OPCODE_R, REG_RA, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_JR);
+            ctrl = TB_JRc;
+            `tick1
         end
     endtask
 

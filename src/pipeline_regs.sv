@@ -52,19 +52,19 @@ module execute_reg
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
         if (reset || flush) begin
-            execute_bus.e_rd0       <= 0;
-            execute_bus.e_rd1       <= 0;
-            execute_bus.e_wa0       <= 0;
-            execute_bus.e_wa1       <= 0;
-            execute_bus.e_sign_imm  <= 0;
-            execute_bus.e_pc_plus4  <= 0;
+            execute_bus.e_rd0         <= 0;
+            execute_bus.e_rd1         <= 0;
+            execute_bus.e_wa0         <= 0;
+            execute_bus.e_wa1         <= 0;
+            execute_bus.e_sign_imm    <= 0;
+            execute_bus.e_pc_plus4    <= 0;
         end else begin
-            execute_bus.e_rd0       <= execute_bus.d_rd0;
-            execute_bus.e_rd1       <= execute_bus.d_rd1;
-            execute_bus.e_wa0       <= execute_bus.d_wa0;
-            execute_bus.e_wa1       <= execute_bus.d_wa1;
-            execute_bus.e_sign_imm  <= execute_bus.d_sign_imm;
-            execute_bus.e_pc_plus4  <= execute_bus.d_pc_plus4;
+            execute_bus.e_rd0         <= execute_bus.d_rd0;
+            execute_bus.e_rd1         <= execute_bus.d_rd1;
+            execute_bus.e_wa0         <= execute_bus.d_wa0;
+            execute_bus.e_wa1         <= execute_bus.d_wa1;
+            execute_bus.e_sign_imm    <= execute_bus.d_sign_imm;
+            execute_bus.e_pc_plus4    <= execute_bus.d_pc_plus4;
         end
     end
 
@@ -106,13 +106,11 @@ module memory_reg
             memory_bus.m_alu_out       <= 0;
             memory_bus.m_dmem_wd       <= 0;
             memory_bus.m_rf_wa         <= 0;
-            memory_bus.m_pc_branch     <= 0;
             memory_bus.m_pc_plus4      <= 0;
         end else begin
             memory_bus.m_alu_out       <= memory_bus.e_alu_out;
             memory_bus.m_dmem_wd       <= memory_bus.e_dmem_wd;
             memory_bus.m_rf_wa         <= memory_bus.e_rf_wa;
-            memory_bus.m_pc_branch     <= memory_bus.e_pc_branch;
             memory_bus.m_pc_plus4      <= memory_bus.e_pc_plus4;
         end
     end
