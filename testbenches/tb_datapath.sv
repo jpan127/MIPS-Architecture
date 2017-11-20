@@ -2,7 +2,8 @@
 `include "defines.svh"
 
 // Wait an entire clock cycle
-`define tick1 #10;
+`define tick1       #10;
+`define tick_half   #5;
 
 `ifdef PIPELINE
     `define tick        #50;
@@ -25,7 +26,7 @@ module tb_datapath;
     logic      clock, reset;
     logic32    instruction, d_instruction;
     logic32    dmem_rd;
-    logic      dmem_we;
+    logic      dmem_we, branch;
     logic32    pc, alu_out, dmem_wd;
 
     // Testbench Variables
@@ -55,6 +56,7 @@ module tb_datapath;
         .pc                 (pc),
         .alu_out            (alu_out),
         .dmem_wd            (dmem_wd),
+        .branch             (branch),
         .control_bus        (control_bus.Receiver)
     );
 
@@ -132,6 +134,42 @@ module tb_datapath;
         end
     endtask
 
+    task assert_less_than;
+        input logic32 value;
+        input logic32 bound;
+        input string  name;
+        begin
+            assert(value < bound)
+                begin
+                    $display("[%s] SUCCESS", name);
+                    success_count++;
+                end
+                else
+                begin
+                    $error("[%s] FAILED ASSERT LESS THAN", name);
+                    fail_count++;
+                end
+        end
+    endtask
+
+    task assert_greater_than;
+        input logic32 value;
+        input logic32 bound;
+        input string  name;
+        begin
+            assert(value > bound)
+                begin
+                    $display("[%s] SUCCESS", name);
+                    success_count++;
+                end
+                else
+                begin
+                    $error("[%s] FAILED ASSERT GREATER THAN", name);
+                    fail_count++;
+                end
+        end
+    endtask
+
     // Helper task to put a value into a register
     task load_reg;
         input logic5  reg_num;
@@ -159,8 +197,11 @@ module tb_datapath;
     task NOP(logic5 cycles);
         begin 
             for (i=0; i<cycles; i++) begin 
-                #10;
-                instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, 0, 0);
+                `tick1
+                // instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, 0, 0);
+                // ctrl = TB_ADDIc;
+                instruction = set_instruction_r(OPCODE_R, REG_ZERO, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_MULTU);
+                ctrl = TB_MULTUc;
             end
         end
     endtask
@@ -504,20 +545,19 @@ module tb_datapath;
 
     task pipeline_test_1;
         begin
-            automatic logic32 stack_frame = -16'd8;
-            automatic logic32 reg_value   = 0;
-            automatic logic32 input_jump_address = (32'b1000_0000);
+            automatic logic16 stack_frame = -16'd8;
+            automatic logic32 input_jump_address = 32'b1000_0000;
             automatic logic32 correct_jump_address = input_jump_address << 2;
 
             // 1. Load 4 into R[5]
             instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'd4);
-            ctrl = TB_ADDIc;
             `tick1
+            ctrl = TB_ADDIc;
 
             // 2. Jump to 0xABCD
             instruction = set_instruction_j(OPCODE_JAL, input_jump_address);
-            ctrl = TB_JALc;
             `tick1
+            ctrl = TB_JALc;
 
             assert_equal(correct_jump_address, pc, "PIPELINE_TEST1::PC");
 
@@ -525,14 +565,14 @@ module tb_datapath;
             if (correct_jump_address == pc) begin 
                 // Decrement Stack Pointer
                 instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, stack_frame);
-                ctrl = TB_ADDIc;
                 `tick1
+                ctrl = TB_ADDIc;
             end
             // If failed to jump
             else begin 
                 instruction = set_instruction_r(OPCODE_R, REG_6, REG_7, REG_ZERO, ignore_shamt, FUNCT_ADD);
-                ctrl = TB_ADDc;
                 `tick1
+                ctrl = TB_ADDc;
             end
 
             // Decode, Execute, Memory, Writeback
@@ -545,39 +585,77 @@ module tb_datapath;
     task pipeline_test_2;
         begin
             automatic logic16 branch_else = 16'h0ABC;
+            automatic logic32 correct_branch_addr = pc + (branch_else << 2) + (15 * 4);  // 15 Clock cycles since start
+
+            // From pipeline_test_1 
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'd4);
+            `tick1
+            ctrl = TB_ADDIc;
 
             // M[REG_SP + 4] = REG_5
             instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_5, 16'd4);
-            ctrl = TB_SWc;
             `tick1
+            ctrl = TB_SWc;
             // M[REG_SP] = REG_RA
             instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_RA, 16'd0);
-            ctrl = TB_SWc;
             `tick1
+            ctrl = TB_SWc;
             // REG_8 = 2
             instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_8, 16'd2);
-            ctrl = TB_ADDIc;
             `tick1
+            ctrl = TB_ADDIc;
+            NOP(4);
             // Set REG_9 if REG_8 < REG_5
             instruction = set_instruction_r(OPCODE_R, REG_8, REG_5, REG_9, ignore_shamt, FUNCT_SLT);
-            ctrl = TB_SLTc;
             `tick1
+            ctrl = TB_SLTc;
+
+            // First iteration REG_8 = 2, REG_5 = 4 so (4 < 2) = 0
+            NOP(4);
+            assert_equal(32'h0, DUT.RF.rf[REG_9], "PIPELINE_TEST2::SLT");
+
             // BEQ
             instruction = set_instruction_i(OPCODE_BEQ, REG_9, REG_ZERO, branch_else);
+            `tick1
             ctrl = TB_BEQc;
-            `tick1
-            // Load 1 into REG_7
-            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_7, 16'd1);
-            ctrl = TB_ADDIc;
-            `tick1
-            // Add 8 to SP
-            instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, 16'd8);
-            ctrl = TB_ADDIc;
-            `tick1
-            // Jump to RA
-            instruction = set_instruction_j(OPCODE_R, REG_RA, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_JR);
-            ctrl = TB_JRc;
-            `tick1
+
+            // Change branch control signal mid-cycle
+            `tick_half 
+                ctrl = (branch) ? TB_BEQc : TB_BEQNc; 
+            `tick_half
+
+            // Assert branch taken
+            NOP(1);
+            assert_equal(correct_branch_addr, pc, "PIPELINE_TEST2::BEQ");
+
+            // Branch Taken
+            if (pc >= correct_branch_addr) begin 
+                // Decrement n
+                instruction = set_instruction_i(OPCODE_ADDI, REG_5, REG_5, -16'd1);
+                `tick1
+                ctrl = TB_ADDIc;
+            end
+            // Branch Not Taken
+            else begin 
+                // Load 1 into REG_7
+                instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_7, 16'd1);
+                `tick1
+                ctrl = TB_ADDIc;
+                // Add 8 to SP
+                instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, 16'd8);
+                `tick1
+                ctrl = TB_ADDIc;
+                // Jump to RA
+                instruction = set_instruction_r(OPCODE_R, REG_RA, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_JR);
+                `tick1
+                ctrl = TB_JRc;
+            end
+
+            NOP(4);
+            assert_greater_than(pc, correct_branch_addr, "PIPELINE_TEST2::FINAL_PC_DID_BRANCH");
+            assert_equal(32'd3, DUT.RF.rf[REG_5], "PIPELINE_TEST2::REG_5");
+            assert_not_equal(32'd1, DUT.RF.rf[REG_7], "PIPELINE_TEST2::REG_7");
+            assert_not_equal(32'h208, DUT.RF.rf[REG_SP], "PIPELINE_TEST2::REG_SP");
         end
     endtask
 
@@ -591,8 +669,15 @@ module tb_datapath;
         // Reset
         `reset_system
 
-        ////// Pipeline Tests
-        pipeline_test_1;
+        //////////////////////////// Pipeline Tests
+
+        // main:
+        // pipeline_test_1;
+
+        // factorial:
+        // pipeline_test_2;
+
+        //////////////////////////// Unit Tests
 
         // // Test ADD
         // test_add;

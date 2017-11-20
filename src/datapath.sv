@@ -79,8 +79,9 @@ module datapath
     assign pc_plus4  = add(fetch_bus.f_pc, 32'd4);                                  // From fetch
 
     // If the instruction coming from IMEM is a jump type, set the PC to jump before decode
+    // Otherwise sel_pc comes directly from control unit after decode
     assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL); // From fetch
-    assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (memory_bus.m_sel_pc);
+    assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (control_bus.sel_pc);
     assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
 
 
@@ -124,7 +125,7 @@ module datapath
 
     logic32 sign_imm;
     // Branch logic + address
-    assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1);
+    assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1) & (decode_bus.d_instruction[31:26] == OPCODE_BEQ);
     assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
     assign sign_imm_sh = shift_left_2(sign_imm);
     assign branch_addr = add(decode_bus.d_pc_plus4, sign_imm_sh);                   // From decode
@@ -141,7 +142,6 @@ module datapath
     assign execute_bus.d_alu_ctrl    = control_bus.alu_ctrl;                         // From decode (control unit)
     assign execute_bus.d_rf_we       = control_bus.rf_we;                            // From decode (control unit)
     assign execute_bus.d_sel_alu_b   = control_bus.sel_alu_b;                        // From decode (control unit)
-    assign execute_bus.d_sel_pc      = control_bus.sel_pc;                           // From decode (control unit)
     assign execute_bus.d_sel_result  = control_bus.sel_result;                       // From decode (control unit)
     assign execute_bus.d_sel_wa      = control_bus.sel_wa;                           // From decode (control unit)
     assign execute_bus.d_dmem_we     = control_bus.dmem_we;                          // From decode (control unit)
@@ -176,7 +176,6 @@ module datapath
     // Bus Inputs
     assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;                             // From execute
     assign memory_bus.e_rf_we      = execute_bus.e_rf_we;                           // From execute
-    assign memory_bus.e_sel_pc     = execute_bus.e_sel_pc;                          // From execute
     assign memory_bus.e_sel_result = execute_bus.e_sel_result;                      // From execute
     assign memory_bus.e_dmem_we    = execute_bus.e_dmem_we;                         // From execute
     assign memory_bus.e_pc_plus4   = execute_bus.e_pc_plus4;                        // From execute
