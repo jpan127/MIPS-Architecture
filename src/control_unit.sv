@@ -68,15 +68,16 @@ module control_unit
             default: 
                 case (funct)
                     FUNCT_ADD:   control_bus.alu_ctrl = ADDac;
-                    FUNCT_SUB:   control_bus.alu_ctrl = SUBac;
                     FUNCT_AND:   control_bus.alu_ctrl = ANDac;
-                    FUNCT_OR:    control_bus.alu_ctrl = ORac;
-                    FUNCT_SLT:   control_bus.alu_ctrl = SLTac;
-                    FUNCT_MULTU: control_bus.alu_ctrl = MULTUac;
                     FUNCT_DIVU:  control_bus.alu_ctrl = DIVUac;
+                    FUNCT_JR:    control_bus.alu_ctrl = JRac;
                     FUNCT_MFHI:  control_bus.alu_ctrl = MFHIac;
                     FUNCT_MFLO:  control_bus.alu_ctrl = MFLOac;
-                    FUNCT_JR:    control_bus.alu_ctrl = JRac;
+                    FUNCT_MULTU: control_bus.alu_ctrl = MULTUac;
+                    FUNCT_NOP:   control_bus.alu_ctrl = NOPac;
+                    FUNCT_OR:    control_bus.alu_ctrl = ORac;
+                    FUNCT_SLT:   control_bus.alu_ctrl = SLTac;
+                    FUNCT_SUB:   control_bus.alu_ctrl = SUBac;
                     default:     control_bus.alu_ctrl = DONT_CAREac;
                 endcase
         endcase

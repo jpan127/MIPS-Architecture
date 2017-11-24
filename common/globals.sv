@@ -13,6 +13,7 @@ package global_types;
     typedef logic [4:0]  logic5;
     typedef logic [5:0]  logic6;
     typedef logic [7:0]  logic8;
+    typedef logic [8:0]  logic9;
     typedef logic [9:0]  logic10;
     typedef logic [10:0] logic11;
     typedef logic [11:0] logic12;
@@ -164,7 +165,8 @@ package global_types;
         DIVUac      = 4'd8,
         MFHIac      = 4'd9,
         MFLOac      = 4'd10,
-        JRac        = 4'd11
+        JRac        = 4'd11,
+        NOPac       = 4'd12
     } alu_ctrl_t;
 
     typedef enum logic [5:0]
@@ -198,11 +200,12 @@ package global_types;
         FUNCT_ADDU      = 'h21,
         FUNCT_AND       = 'h24,
         FUNCT_JR        = 'h08,
+        FUNCT_NOP       = 'h00,
         FUNCT_NOR       = 'h27,
         FUNCT_OR        = 'h25,
         FUNCT_SLT       = 'h2A,
         FUNCT_SLTU      = 'h2b,
-        FUNCT_SLL       = 'h00,
+        // FUNCT_SLL       = 'h00,  // Maybe implement in the future
         FUNCT_SRL       = 'h02,
         FUNCT_SUB       = 'h22,
         FUNCT_SUBU      = 'h23,
@@ -246,9 +249,11 @@ package control_signals;
     BEQc    = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_BRANCH,   ALU_OP_SUBI },
     BEQNc   = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_SUBI },
     // J-Type
-    Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JUMP,     ALU_OP_ADDI },
-    JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,  SEL_PC_JUMP,     ALU_OP_ADDI },
+    // sel_pc should select jump but since it is being overridden before the control unit, then selecting jump would jump twice
+    Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_ADDI },
+    JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,  SEL_PC_PC_PLUS4, ALU_OP_ADDI },
     // R-Type
+    NOPc    = '{ RF_WE_DISABLE, SEL_WA_00,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_00,        SEL_PC_PC_PLUS4, ALU_OP_R    },    
     JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JR,       ALU_OP_R    },    
     Rc      = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
     ADDc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },

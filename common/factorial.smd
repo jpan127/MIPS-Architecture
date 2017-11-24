@@ -2,29 +2,59 @@
 main:
 	addi $a0, $0, 4
 	jal  factorial
+	nop
+	nop
 	add $s0, $v0, $0
 	j end
 
 factorial:
 	addi $sp, $sp, -8
+	nop
+	nop
+	nop
+	nop
 	sw $a0, 4($sp)
 	sw $ra, 0($sp)
 	addi $t0, $0, 2
+	nop
+	nop
+	nop
+	nop
 	slt $t0, $a0, $t0
+	nop
+	nop
+	nop
+	nop
 	beq $t0, $0, else
+	nop
+	nop
 	addi $v0, $0, 1
 	addi $sp, $sp, 8
+	nop
+	nop
+	nop
+	nop
 	jr $ra
+	nop
+	nop
 
 else:
 	addi $a0, $a0, -1
 	jal factorial
+	nop
+	nop
 	lw $ra, 0($sp)
 	lw $a0, 4($sp)
 	addi $sp, $sp, 8
+	nop
+	nop
 	multu $a0, $v0
+	nop
+	nop
 	mflo $v0
 	jr $ra
+	nop
+	nop
 
 end:
 	j end

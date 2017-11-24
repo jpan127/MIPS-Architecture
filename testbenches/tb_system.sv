@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
-`include "defines.svh"
 
-// [MACRO] Wait an entire clock cycle
-`define tick            #10;
-`define half_tick       #5;
-// [MACRO] Reset on, clock, reset off
+`define tick1       #10;
+`define tick_half   #5;
+`define tick5       #50;
+
+// Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
 module tb_system;
@@ -18,15 +18,15 @@ module tb_system;
     logic     dmem_we;
     logic32   instruction;
     logic32   pc;
-    logic10   dmem_addr;
+    logic9    dmem_addr;
     logic32   dmem_rd;
     logic5    rf_ra;
     logic32   rf_rd;
 
     // Testbench variables
-    logic16      counter;
-    localparam   STAGES = 'd2;
-    localparam   MAX    = 'd53 * STAGES;
+    logic16    counter;
+    localparam STAGES = 'd2;
+    localparam MAX    = 'd53 * STAGES;
 
     // DUT
     system_debug DUT(.*);
@@ -79,7 +79,10 @@ module tb_system;
         else begin
 
             // Stop simulation after program ends
-            if (instruction == 32'h0800_0015) begin
+            if (instruction == 32'h0800_0033) begin
+                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_2], "ALU FINAL RESULT");
+                $display("Total Instructions: %d", counter);
+                $display("///////////////////////////////////////////////////////////////////////");
                 $stop;
             end
 
@@ -93,20 +96,18 @@ module tb_system;
                     // Check each case when it should be writing data to dmem
                     case (alu_out[9:0]) 
                         10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
-                        10'h1F8: assert_equal(32'h8,  dmem_wd, "DMEM_WD 2" );
+                        10'h1F8: assert_equal(32'hC,  dmem_wd, "DMEM_WD 2" );   // Assembler says 0x8 but we use JAL = PC + 8
                         10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
-                        10'h1F0: assert_equal(32'h3C, dmem_wd, "DMEM_WD 4" );
+                        10'h1F0: assert_equal(32'h98, dmem_wd, "DMEM_WD 4" );
                         10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
-                        10'h1E8: assert_equal(32'h3C, dmem_wd, "DMEM_WD 6" );
+                        10'h1E8: assert_equal(32'h98, dmem_wd, "DMEM_WD 6" );
                         10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
-                        10'h1E0: assert_equal(32'h3C, dmem_wd, "DMEM_WD 8" );
+                        10'h1E0: assert_equal(32'h98, dmem_wd, "DMEM_WD 8" );
                     endcase
                 end
 
                 // Check last ADD instruction, the result
                 if (counter == MAX) begin 
-                    assert_equal(32'h18, alu_out, "ALU FINAL RESULT");
-                    $display("///////////////////////////////////////////////////////////////////////");
                 end
             end
         end

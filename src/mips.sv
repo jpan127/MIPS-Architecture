@@ -179,10 +179,11 @@ module system_debug
     // Extra debug outputs
     output [31:0] instruction,
     output [31:0] pc,
-    output [9:0]  dmem_addr,
+    output [8:0]  dmem_addr,
     output [31:0] dmem_rd            );
 
-    assign dmem_addr = alu_out[9:0];
+    // Divide by 4
+    assign dmem_addr = alu_out[8:0]; // >> 2;
 
     // Debug bus
     DebugBus debug_bus();
@@ -212,7 +213,7 @@ module system_debug
     ( 
         .clock       (clock), 
         .we          (dmem_we), 
-        .addr        (alu_out[9:0]), 
+        .addr        (dmem_addr), 
         .wd          (dmem_wd), 
         .rd          (dmem_rd) 
     );

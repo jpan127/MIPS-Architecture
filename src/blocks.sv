@@ -170,7 +170,7 @@ module alu
             4'd3:    y = a - b;                     // SUB
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
-            4'd6:    y = (b < a);                   // SLT
+            4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky
             4'd7:    { d_hi, d_lo } = a * b;        // MULT
             4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
             4'd9:    y = q_hi;                      // MFHI

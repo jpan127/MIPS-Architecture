@@ -51,8 +51,8 @@ module datapath
     assign d_instruction    = decode_bus.d_instruction;
     assign control_bus.zero = memory_bus.m_zero;
     assign dmem_we          = memory_bus.m_dmem_we;
-    assign alu_out          = memory_bus.e_alu_out;
-    assign dmem_wd          = memory_bus.e_dmem_wd;
+    assign alu_out          = memory_bus.m_alu_out;
+    assign dmem_wd          = memory_bus.m_dmem_wd;
 
     // Hazard Controller
     logic f_flush, d_flush, e_flush, m_flush, w_flush;

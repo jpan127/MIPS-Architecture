@@ -47,7 +47,6 @@ package pipeline_pkg;
         alu_ctrl_t    d_alu_ctrl;
         rf_we_t       d_rf_we;
         sel_alu_b_t   d_sel_alu_b;
-        sel_pc_t      d_sel_pc;
         sel_result_t  d_sel_result;
         sel_wa_t      d_sel_wa;
         dmem_we_t     d_dmem_we;
@@ -55,7 +54,6 @@ package pipeline_pkg;
         alu_ctrl_t    e_alu_ctrl;
         rf_we_t       e_rf_we;
         sel_alu_b_t   e_sel_alu_b;
-        sel_pc_t      e_sel_pc;
         sel_result_t  e_sel_result;
         sel_wa_t      e_sel_wa;
         dmem_we_t     e_dmem_we;
@@ -76,12 +74,10 @@ package pipeline_pkg;
         logic32       m_pc_plus4;
         // Control Inputs
         rf_we_t       e_rf_we;
-        sel_pc_t      e_sel_pc;
         sel_result_t  e_sel_result;
         dmem_we_t     e_dmem_we;
         // Control Outputs
         rf_we_t       m_rf_we;
-        sel_pc_t      m_sel_pc;
         sel_result_t  m_sel_result;
         dmem_we_t     m_dmem_we;
         // Status Inputs
