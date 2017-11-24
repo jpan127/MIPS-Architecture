@@ -9,12 +9,11 @@
 /// Just the CPU
 module mips 
 
-(   input               clock, reset,
-    input   [31:0]      instruction, dmem_rd,
-    DebugBus.InputBus   debug_in,
-    DebugBus.OutputBus  debug_out,
-    output              dmem_we,
-    output  [31:0]      pc, alu_out, dmem_wd    );
+(   input          clock, reset,
+    input   [31:0] instruction, dmem_rd,
+    DebugBus       debug_bus,
+    output         dmem_we,
+    output  [31:0] pc, alu_out, dmem_wd    );
 
     // Packages
     import global_types::*;
@@ -55,8 +54,7 @@ module mips
         .dmem_wd        (dmem_wd),
         .d_instruction  (d_instruction),
         .branch         (branch),
-        .debug_in       (debug_in),
-        .debug_out      (debug_out),
+        .debug_bus      (debug_bus),
         .control_bus    (control_bus.Receiver)
     );
 
@@ -141,8 +139,7 @@ module system
 
     mips MIPS 
     (
-        .debug_in       (debug_bus.InputBus),
-        .debug_out      (debug_bus.OutputBus),
+        .debug_bus      (debug_bus),
         .clock          (db_button), 
         .reset          (reset), 
         .pc             (pc), 
@@ -194,31 +191,30 @@ module system_debug
 
     mips MIPS 
     (
-        .debug_in       (debug_bus.InputBus),
-        .debug_out      (debug_bus.OutputBus),
-        .clock          (clock), 
-        .reset          (reset), 
-        .pc             (pc), 
-        .instruction    (instruction), 
-        .dmem_we        (dmem_we), 
-        .alu_out        (alu_out), 
-        .dmem_wd        (dmem_wd), 
-        .dmem_rd        (dmem_rd)
+        .debug_bus   (debug_bus),
+        .clock       (clock), 
+        .reset       (reset), 
+        .pc          (pc), 
+        .instruction (instruction), 
+        .dmem_we     (dmem_we), 
+        .alu_out     (alu_out), 
+        .dmem_wd     (dmem_wd), 
+        .dmem_rd     (dmem_rd)
     );
 
     imem IMEM 
     ( 
-        .addr           (pc[11:2]),        // 10 bits for 1024 spots
-        .data           (instruction) 
+        .addr        (pc[11:2]),        // 10 bits for 1024 spots
+        .data        (instruction) 
     );
     
     dmem DMEM 
     ( 
-        .clock          (clock), 
-        .we             (dmem_we), 
-        .addr           (alu_out[9:0]), 
-        .wd             (dmem_wd), 
-        .rd             (dmem_rd) 
+        .clock       (clock), 
+        .we          (dmem_we), 
+        .addr        (alu_out[9:0]), 
+        .wd          (dmem_wd), 
+        .rd          (dmem_rd) 
     );
 
 endmodule

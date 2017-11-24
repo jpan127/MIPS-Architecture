@@ -1,9 +1,10 @@
 `timescale 1ns / 1ps
 
-// [MACRO] Wait an entire clock cycle
-`define tick            #10;
-`define half_tick       #5;
-// [MACRO] Reset on, clock, reset off
+`define tick1       #10;
+`define tick_half   #5;
+`define tick5       #50;
+
+// Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
 module tb_mips;
@@ -13,10 +14,11 @@ module tb_mips;
     import global_types::*;
 
     // DUT ports
-    logic   clock, reset;           // Input
-    logic32 instruction, dmem_rd;   // Input
-    logic   dmem_we;                // Output
-    logic32 pc, alu_out, dmem_wd;   // Output
+    logic    clock, reset;           // Input
+    logic32  instruction, dmem_rd;   // Input
+    logic    dmem_we;                // Output
+    logic32  pc, alu_out, dmem_wd;   // Output
+    DebugBus debug_bus();
 
     // Testbench Variables
     localparam  logic5 ignore_rs    = 'd0,
@@ -110,7 +112,7 @@ module tb_mips;
         input logic16 value;
         begin
             instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, reg_num, value);
-            `tick
+            NOP(5);
         end
     endtask
 
@@ -120,9 +122,18 @@ module tb_mips;
         output logic32 value;
         begin
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, reg_num, 16'd0);
-            `tick
+            NOP(5);
 
             value = dmem_wd;
+        end
+    endtask
+
+    task NOP(logic5 cycles);
+        begin 
+            for (i=0; i<cycles; i++) begin 
+                `tick1
+                instruction = set_instruction_r(OPCODE_R, REG_ZERO, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_ADD);
+            end
         end
     endtask
 
@@ -139,9 +150,9 @@ module tb_mips;
 
             // R[22] = R[20] + R[21] = 100
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_ADD);
-            `tick
+            NOP(5);
 
-            assert_equal(32'd100, alu_out, "ADD");
+            assert_equal(32'd100, DUT.DP.RF.rf[REG_22], "ADD");
 
             instructions_tested++;
         end
@@ -151,23 +162,16 @@ module tb_mips;
         begin
             // R[29] = 0
             load_reg(REG_29, 16'd0);
-            assert_equal(32'd0, alu_out, "ADDI1");
+            assert_equal(32'd0, DUT.DP.RF.rf[REG_29], "ADDI1");
 
             // R[29] = 256
             load_reg(REG_29, 16'd256);
-            assert_equal(32'd256, alu_out, "ADDI2");
+            assert_equal(32'd256, DUT.DP.RF.rf[REG_29], "ADDI2");
 
-            // R[29] = R[29] + 256 = 512
-            instruction = set_instruction_i(OPCODE_ADDI, REG_29, REG_30, 16'd256);
-            `tick
-            assert_equal(32'd512, alu_out, "ADDI3");
-
-            // Special test case in which reading and writing from same register can have timing issues
-            // Correct value is asserted at posedge or half clock cycle
             // R[29] = R[29] + 256 = 512
             instruction = set_instruction_i(OPCODE_ADDI, REG_29, REG_29, 16'd256);
-            #5 assert_equal(32'd512, alu_out, "ADDI4"); 
-            #5;
+            NOP(5);
+            assert_equal(32'd512, DUT.DP.RF.rf[REG_29], "ADDI3");
 
             instructions_tested++;
         end
@@ -181,10 +185,10 @@ module tb_mips;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_AND);
-            `tick
+            NOP(5);
 
             // R[22] = 0xA & 0xA = 0xA
-            assert_equal(32'hA, alu_out, "AND");
+            assert_equal(32'hA, DUT.DP.RF.rf[REG_22], "AND");
 
             instructions_tested++;
         end
@@ -193,24 +197,28 @@ module tb_mips;
     task test_branch;
         begin
             // Extra +4 because there is an ADDI instruction (load_reg) before BEQ
-            automatic logic32 correct_branch1 = pc + 4 + ( 4 ) + (16'h7FFF << 2);
-            automatic logic32 correct_branch2 = pc + 4 + ( 4 ) + (16'h0ABC << 2);
+            automatic logic32 correct_branch1 = (16'h7FFF << 2);
+            automatic logic32 correct_branch2 = (16'h0ABC << 2);
 
             // Set REG_1 = 0000
             load_reg(REG_1, 16'd0);
 
+            correct_branch1 += pc;
             // Test when equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h7FFF);
-            `tick
+            NOP(2);
+            correct_branch1 += 4;
 
             assert_equal(correct_branch1, pc, "BEQY::PC");
 
             // Set REG_1 = 7FFF
             load_reg(REG_1, 16'h7FFF);
 
+            correct_branch2 += pc;
             // Test when not equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h0ABC);
-            `tick
+            NOP(2);
+            correct_branch2 += 4;
 
             assert_not_equal(correct_branch2, pc, "BEQN::PC");
 
@@ -227,19 +235,19 @@ module tb_mips;
             // LO = rs/rt  HI = rs%rt
             // Divide 257 / 16
             instruction = set_instruction_r(OPCODE_R, REG_11, REG_12, ignore_rd, ignore_shamt, FUNCT_DIVU);
-            `tick
+            NOP(5);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_13, ignore_shamt, FUNCT_MFHI);
-            `tick
+            NOP(5);
             // Check HI is correct
-            assert_equal(16, alu_out, "DIVU::HI");
+            assert_equal(16, DUT.DP.RF.rf[REG_13], "DIVU::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_14, ignore_shamt, FUNCT_MFLO);
-            `tick
+            NOP(5);
             // Check LO is correct
-            assert_equal(1, alu_out, "DIVU::LO");
+            assert_equal(1, DUT.DP.RF.rf[REG_14], "DIVU::LO");
 
             instructions_tested++;
         end
@@ -251,7 +259,7 @@ module tb_mips;
             automatic logic32 final_j_addr = { pc[31:28], jump_address, 2'b00 };
 
             instruction = set_instruction_j(OPCODE_J, jump_address);
-            `tick
+            NOP(1);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "J");
@@ -267,17 +275,16 @@ module tb_mips;
             automatic logic32 r31_value    = 0;
             automatic logic32 old_pc       = pc;
 
+            // J / JAL takes 1 cycle
             instruction = set_instruction_j(OPCODE_JAL, jump_address);
-            `tick
+            NOP(1);
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "JAL::PC");
 
-            // Read from R[31]
-            read_reg(REG_RA, r31_value);
-
-            // Assert R[31] == PC + 4
-            assert_equal(old_pc + 4, r31_value, "JAL::R31");
+            NOP(4);
+            // Assert R[31] == PC + 8
+            assert_equal(old_pc + 8, DUT.DP.RF.rf[REG_RA], "JAL::R31");
 
             instructions_tested++;
         end
@@ -290,8 +297,9 @@ module tb_mips;
             // Load 0xAAAA into R[5]
             load_reg(REG_5, jump_address);
 
+            // JR / BEQ takes 2 cycles
             instruction = set_instruction_r(OPCODE_R, REG_5, ignore_rt, ignore_rd, ignore_shamt, FUNCT_JR);
-            `tick
+            NOP(2);
 
             // Assert PC changed to R[5]
             assert_equal(jump_address, pc, "JR");
@@ -310,13 +318,14 @@ module tb_mips;
 
             // Write FFFF_FFFF into R[5]
             instruction = set_instruction_i(OPCODE_LW, REG_ZERO, REG_5, offset_address);
-            `tick
+            NOP(2);
 
             // Assert it calculated the correct address = 5
             assert_equal(dmem_address, alu_out, "LW::DMEM_ADDRESS");
+            NOP(2);
             
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
-            `tick
+            NOP(2);
 
             // Assert the correct value was loaded into R[5] by using SW and looking at dmem_wd
             assert_equal(32'hFFFF_FFFF, dmem_wd, "LW::DMEM_WD");
@@ -335,35 +344,35 @@ module tb_mips;
             load_reg(REG_10, 16'h7FFF);
             // Multiply : HI = 0    LO = 3FFF_0001
             instruction = set_instruction_r(OPCODE_R, REG_10, REG_10, ignore_rd, ignore_shamt, FUNCT_MULTU);
-            `tick
+            NOP(5);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_11, ignore_shamt, FUNCT_MFHI);
-            `tick
+            NOP(5);
             // Check LO is correct
-            assert_equal(32'h0, alu_out, "MULTU1::HI");
+            assert_equal(32'h0, DUT.DP.RF.rf[REG_11], "MULTU1::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_12, ignore_shamt, FUNCT_MFLO);
-            `tick
+            NOP(5);
             // Check LO is correct
-            assert_equal(32'h3FFF_0001, alu_out, "MULTU1::LO");
+            assert_equal(32'h3FFF_0001, DUT.DP.RF.rf[REG_12], "MULTU1::LO");
 
             // Multiply : HI = 0000_1FFF  LO = 4001_7FFF
             instruction = set_instruction_r(OPCODE_R, REG_10, REG_12, ignore_rd, ignore_shamt, FUNCT_MULTU);
-            `tick
+            NOP(5);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_13, ignore_shamt, FUNCT_MFHI);
-            `tick
+            NOP(5);
             // Check HI is correct
-            assert_equal(32'h0000_1FFF, alu_out, "MULTU2::HI");
+            assert_equal(32'h0000_1FFF, DUT.DP.RF.rf[REG_13], "MULTU2::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_14, ignore_shamt, FUNCT_MFLO);
-            `tick
+            NOP(5);
             // Check LO is correct
-            assert_equal(32'h4001_7FFF, alu_out, "MULTU2::LO");
+            assert_equal(32'h4001_7FFF, DUT.DP.RF.rf[REG_14], "MULTU2::LO");
 
             instructions_tested++;
         end
@@ -377,19 +386,19 @@ module tb_mips;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
-            `tick
+            NOP(5);
 
             // R[22] = 0xA < 0xA = 0
-            assert_equal(32'd0, alu_out, "SLT::NO");
+            assert_equal(32'd0, DUT.DP.RF.rf[REG_22], "SLT::NO");
 
             // R[20] = 0x9
             load_reg(REG_20, 16'h9);
 
-            instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
-            `tick
+            instruction = set_instruction_r(OPCODE_R, REG_21, REG_20, REG_22, ignore_shamt, FUNCT_SLT);
+            NOP(5);
 
             // R[22] = 0x9 < 0xA != 0
-            assert_equal(32'd1, alu_out, "SLT::YES");
+            assert_equal(32'd1, DUT.DP.RF.rf[REG_22], "SLT::YES");
 
             instructions_tested++;
         end
@@ -403,10 +412,10 @@ module tb_mips;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SUB);
-            `tick
+            NOP(5);
 
             // R[22] = 0xA - 0xA = 0
-            assert_equal(32'd0, alu_out, "SUB");
+            assert_equal(32'd0, DUT.DP.RF.rf[REG_22], "SUB");
 
             instructions_tested++;
         end
@@ -423,7 +432,7 @@ module tb_mips;
 
             // Store R[5] into 0x5
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
-            `tick
+            NOP(2);
 
             // The data was sign extended
             assert_equal(sexted_data, dmem_wd, "SW");

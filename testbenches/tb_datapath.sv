@@ -1,15 +1,8 @@
 `timescale 1ns / 1ps
-`include "defines.svh"
 
-// Wait an entire clock cycle
 `define tick1       #10;
 `define tick_half   #5;
-
-`ifdef PIPELINE
-    `define tick        #50;
-`else 
-    `define tick        #10;
-`endif
+`define tick5       #50;
 
 // Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
@@ -45,8 +38,7 @@ module tb_datapath;
     // DUT
     datapath DUT
     (
-        .debug_in           (debug_bus.InputBus),
-        .debug_out          (debug_bus.OutputBus),
+        .debug_bus          (debug_bus),
         .clock              (clock),
         .reset              (reset),
         .instruction        (instruction),
@@ -176,8 +168,9 @@ module tb_datapath;
         input logic16 value;
         begin
             instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, reg_num, value);
+            `tick1
             ctrl = TB_ADDIc;
-            `tick
+            NOP(4);
         end
     endtask
 
@@ -188,7 +181,7 @@ module tb_datapath;
         begin
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, reg_num, 16'd0);
             ctrl = TB_SWc;
-            `tick
+            `tick5
 
             value = dmem_wd;
         end
@@ -197,11 +190,9 @@ module tb_datapath;
     task NOP(logic5 cycles);
         begin 
             for (i=0; i<cycles; i++) begin 
+                instruction = set_instruction_r(OPCODE_R, REG_ZERO, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_ADD);
                 `tick1
-                // instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, 0, 0);
-                // ctrl = TB_ADDIc;
-                instruction = set_instruction_r(OPCODE_R, REG_ZERO, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_MULTU);
-                ctrl = TB_MULTUc;
+                ctrl = TB_ADDc;
             end
         end
     endtask
@@ -219,10 +210,11 @@ module tb_datapath;
 
             // R[22] = R[20] + R[21] = 100
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_ADD);
+            `tick1
             ctrl = TB_ADDc;
-            `tick
+            NOP(4);
 
-            assert_equal(32'd100, alu_out, "ADD");
+            assert_equal(32'd100, DUT.RF.rf[REG_22], "ADD");
 
             instructions_tested++;
         end
@@ -232,23 +224,18 @@ module tb_datapath;
         begin
             // R[29] = 0
             load_reg(REG_29, 16'd0);
-            assert_equal(32'd0, alu_out, "ADDI1");
+            assert_equal(32'd0, DUT.RF.rf[REG_29], "ADDI1");
 
             // R[29] = 256
             load_reg(REG_29, 16'd256);
-            assert_equal(32'd256, alu_out, "ADDI2");
+            assert_equal(32'd256, DUT.RF.rf[REG_29], "ADDI2");
 
-            // R[29] = R[29] + 256 = 512
-            instruction = set_instruction_i(OPCODE_ADDI, REG_29, REG_30, 16'd256);
-            `tick
-            assert_equal(32'd512, alu_out, "ADDI3");
-
-            // Special test case in which reading and writing from same register can have timing issues
-            // Correct value is asserted at posedge or half clock cycle
             // R[29] = R[29] + 256 = 512
             instruction = set_instruction_i(OPCODE_ADDI, REG_29, REG_29, 16'd256);
-            #5 assert_equal(32'd512, alu_out, "ADDI4"); 
-            #5;
+            `tick1
+            ctrl = TB_ADDIc;
+            NOP(4);
+            assert_equal(32'd512, DUT.RF.rf[REG_29], "ADDI3");
 
             instructions_tested++;
         end
@@ -262,11 +249,12 @@ module tb_datapath;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_AND);
+            `tick1
             ctrl = TB_ANDc;
-            `tick
+            NOP(4);
 
             // R[22] = 0xA & 0xA = 0xA
-            assert_equal(32'hA, alu_out, "AND");
+            assert_equal(32'hA, DUT.RF.rf[REG_22], "AND");
 
             instructions_tested++;
         end
@@ -283,10 +271,11 @@ module tb_datapath;
 
             // Test when equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h7FFF);
+            `tick1
             ctrl = TB_BEQc;
-            repeat(4) #10;
 
-            assert_equal(1, control_bus.Receiver.zero, "BEQY::ZERO");
+            assert_equal(1, DUT.branch, "BEQY::branch");
+            NOP(1);
             assert_equal(correct_branch1, pc, "BEQY::PC");
 
             // Set REG_1 = 7FFF
@@ -294,10 +283,11 @@ module tb_datapath;
 
             // Test when not equal
             instruction = set_instruction_i(OPCODE_BEQ, REG_ZERO, REG_1, 16'h0ABC);
+            `tick1
             ctrl = TB_BEQc;
-            repeat(4) #10;
+            NOP(1);
 
-            assert_equal(0, control_bus.Receiver.zero, "BEQN::ZERO");
+            assert_equal(0, DUT.branch, "BEQN::branch");
             assert_not_equal(correct_branch2, pc, "BEQN::PC");
 
             instructions_tested++;
@@ -313,22 +303,25 @@ module tb_datapath;
             // LO = rs/rt  HI = rs%rt
             // Divide 257 / 16
             instruction = set_instruction_r(OPCODE_R, REG_11, REG_12, ignore_rd, ignore_shamt, FUNCT_DIVU);
+            `tick1
             ctrl = TB_DIVUc;
-            `tick
+            NOP(4);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_13, ignore_shamt, FUNCT_MFHI);
+            `tick1
             ctrl = TB_MFHIc;
-            `tick
+            NOP(4);
             // Check HI is correct
-            assert_equal(16, alu_out, "DIVU::HI");
+            assert_equal(16, DUT.RF.rf[REG_13], "DIVU::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_14, ignore_shamt, FUNCT_MFLO);
+            `tick1
             ctrl = TB_MFLOc;
-            `tick
+            NOP(4);
             // Check LO is correct
-            assert_equal(1, alu_out, "DIVU::LO");
+            assert_equal(1, DUT.RF.rf[REG_14], "DIVU::LO");
 
             instructions_tested++;
         end
@@ -340,8 +333,7 @@ module tb_datapath;
             automatic logic32 final_j_addr = { pc[31:28], jump_address, 2'b00 };
 
             instruction = set_instruction_j(OPCODE_J, jump_address);
-            ctrl = TB_Jc;
-            NOP(1);
+            `tick1
 
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "J");
@@ -358,21 +350,16 @@ module tb_datapath;
             automatic logic32 old_pc       = pc;
 
             instruction = set_instruction_j(OPCODE_JAL, jump_address);
+            `tick1
             ctrl = TB_JALc;
-            // Fetch
-            NOP(1);
-
             // Assert PC == jump address
             assert_equal(final_j_addr, pc, "JAL::PC");
 
             // Decode, Execute, Memory, Writeback
             NOP(4);
 
-            // Read from R[31]
-            read_reg(REG_RA, r31_value);
-
             // Assert R[31] == PC + 8
-            assert_equal(old_pc + 8, r31_value, "JAL::R31");
+            assert_equal(old_pc + 8, DUT.RF.rf[REG_RA], "JAL::R31");
 
             instructions_tested++;
         end
@@ -386,8 +373,9 @@ module tb_datapath;
             load_reg(REG_5, jump_address);
 
             instruction = set_instruction_r(OPCODE_R, REG_5, ignore_rt, ignore_rd, ignore_shamt, FUNCT_JR);
+            `tick1
             ctrl = TB_JRc;
-            `tick
+            NOP(1);
 
             // Assert PC changed to R[5]
             assert_equal(jump_address, pc, "JR");
@@ -405,15 +393,19 @@ module tb_datapath;
             dmem_rd = 32'hFFFF_FFFF;
 
             instruction = set_instruction_i(OPCODE_LW, REG_ZERO, REG_5, offset_address);
+            `tick1
             ctrl = TB_LWc;
-            `tick
+            NOP(1);
 
             // Assert it calculated the correct address = 5
             assert_equal(dmem_address, alu_out, "LW::DMEM_ADDRESS");
+
+            NOP(2);
             
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
+            `tick1
             ctrl = TB_SWc;
-            `tick
+            NOP(1);
 
             // Assert the correct value was loaded into R[5] by using SW and looking at dmem_wd
             assert_equal(32'hFFFF_FFFF, dmem_wd, "LW::DMEM_WD");
@@ -432,41 +424,48 @@ module tb_datapath;
             load_reg(REG_10, 16'h7FFF);
             // Multiply : HI = 0    LO = 3FFF_0001
             instruction = set_instruction_r(OPCODE_R, REG_10, REG_10, ignore_rd, ignore_shamt, FUNCT_MULTU);
+            `tick1
             ctrl = TB_MULTUc;
-            `tick
+            NOP(4);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_11, ignore_shamt, FUNCT_MFHI);
+            `tick1
             ctrl = TB_MFHIc;
-            `tick
+            NOP(4);
             // Check LO is correct
-            assert_equal(32'h0, alu_out, "MULTU1::HI");
+            assert_equal(32'h0, DUT.RF.rf[REG_11], "MULTU1::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_12, ignore_shamt, FUNCT_MFLO);
+            `tick1
             ctrl = TB_MFLOc;
-            `tick
+            NOP(4);
             // Check LO is correct
-            assert_equal(32'h3FFF_0001, alu_out, "MULTU1::LO");
+            assert_equal(32'h3FFF_0001, DUT.RF.rf[REG_12], "MULTU1::LO");
+
 
             // Multiply : HI = 0000_1FFF  LO = 4001_7FFF
             instruction = set_instruction_r(OPCODE_R, REG_10, REG_12, ignore_rd, ignore_shamt, FUNCT_MULTU);
+            `tick1
             ctrl = TB_MULTUc;
-            `tick
+            NOP(4);
 
             // Move from HI
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_13, ignore_shamt, FUNCT_MFHI);
+            `tick1
             ctrl = TB_MFHIc;
-            `tick
+            NOP(4);
             // Check HI is correct
-            assert_equal(32'h0000_1FFF, alu_out, "MULTU2::HI");
+            assert_equal(32'h0000_1FFF, DUT.RF.rf[REG_13], "MULTU2::HI");
 
             // Move from LO
             instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, REG_14, ignore_shamt, FUNCT_MFLO);
+            `tick1
             ctrl = TB_MFLOc;
-            `tick
+            NOP(4);
             // Check LO is correct
-            assert_equal(32'h4001_7FFF, alu_out, "MULTU2::LO");
+            assert_equal(32'h4001_7FFF, DUT.RF.rf[REG_14], "MULTU2::LO");
 
             instructions_tested++;
         end
@@ -480,21 +479,23 @@ module tb_datapath;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
+            `tick1
             ctrl = TB_SLTc;
-            `tick
+            NOP(4);
 
             // R[22] = 0xA < 0xA = 0
-            assert_equal(32'd0, alu_out, "SLT::NO");
+            assert_equal(32'd0, DUT.RF.rf[REG_22], "SLT::NO");
 
             // R[20] = 0x9
             load_reg(REG_20, 16'h9);
 
-            instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
+            instruction = set_instruction_r(OPCODE_R, REG_21, REG_20, REG_22, ignore_shamt, FUNCT_SLT);
+            `tick1
             ctrl = TB_SLTc;
-            `tick
+            NOP(4);
 
             // R[22] = 0x9 < 0xA != 0
-            assert_equal(32'd1, alu_out, "SLT::YES");
+            assert_equal(32'd1, DUT.RF.rf[REG_22], "SLT::YES");
 
             instructions_tested++;
         end
@@ -508,11 +509,12 @@ module tb_datapath;
             load_reg(REG_21, 16'hA);
 
             instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SUB);
+            `tick1
             ctrl = TB_SUBc;
-            `tick
+            NOP(4);
 
             // R[22] = 0xA - 0xA = 0
-            assert_equal(32'd0, alu_out, "SUB");
+            assert_equal(32'd0, DUT.RF.rf[REG_22], "SUB");
 
             instructions_tested++;
         end
@@ -529,8 +531,9 @@ module tb_datapath;
 
             // Store R[5] into 0x5
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
+            `tick1
             ctrl = TB_SWc;
-            `tick
+            NOP(1);
 
             // The data was sign extended
             assert_equal(sexted_data, dmem_wd, "SW");
@@ -543,18 +546,23 @@ module tb_datapath;
     //                                    Pipeline Tests                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    localparam logic5 a0 = REG_5;
+    localparam logic5 v0 = REG_7;
+    localparam logic5 t0 = REG_8;
+    localparam logic5 s0 = REG_6;
+
     task pipeline_test_1;
         begin
             automatic logic16 stack_frame = -16'd8;
             automatic logic32 input_jump_address = 32'b1000_0000;
             automatic logic32 correct_jump_address = input_jump_address << 2;
 
-            // 1. Load 4 into R[5]
-            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'd4);
+            // addi $a0, $0, 4
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, a0, 16'd4);
             `tick1
             ctrl = TB_ADDIc;
 
-            // 2. Jump to 0xABCD
+            // jal  factorial
             instruction = set_instruction_j(OPCODE_JAL, input_jump_address);
             `tick1
             ctrl = TB_JALc;
@@ -563,14 +571,15 @@ module tb_datapath;
 
             // If jumped correctly
             if (correct_jump_address == pc) begin 
-                // Decrement Stack Pointer
+                // addi $sp, $sp, -8
                 instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, stack_frame);
                 `tick1
                 ctrl = TB_ADDIc;
             end
             // If failed to jump
             else begin 
-                instruction = set_instruction_r(OPCODE_R, REG_6, REG_7, REG_ZERO, ignore_shamt, FUNCT_ADD);
+                // add $s0, $v0, $0
+                instruction = set_instruction_r(OPCODE_R, s0, v0, REG_ZERO, ignore_shamt, FUNCT_ADD);
                 `tick1
                 ctrl = TB_ADDc;
             end
@@ -587,35 +596,36 @@ module tb_datapath;
             automatic logic16 branch_else = 16'h0ABC;
             automatic logic32 correct_branch_addr = pc + (branch_else << 2) + (15 * 4);  // 15 Clock cycles since start
 
-            // From pipeline_test_1 
-            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'd4);
+            // From pipeline_test_1
+            // addi $a0, $0, 4
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, a0, 16'd4);
             `tick1
             ctrl = TB_ADDIc;
 
-            // M[REG_SP + 4] = REG_5
-            instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_5, 16'd4);
+            // sw $a0, 4($sp)
+            instruction = set_instruction_i(OPCODE_SW, REG_SP, a0, 16'd4);
             `tick1
             ctrl = TB_SWc;
-            // M[REG_SP] = REG_RA
+            // sw $ra, 0($sp)
             instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_RA, 16'd0);
             `tick1
             ctrl = TB_SWc;
-            // REG_8 = 2
-            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_8, 16'd2);
+            // addi $t0, $0, 2
+            instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, t0, 16'd2);
             `tick1
             ctrl = TB_ADDIc;
             NOP(4);
-            // Set REG_9 if REG_8 < REG_5
-            instruction = set_instruction_r(OPCODE_R, REG_8, REG_5, REG_9, ignore_shamt, FUNCT_SLT);
+            // slt $t0, $a0, $t0
+            instruction = set_instruction_r(OPCODE_R, t0, a0, t0, ignore_shamt, FUNCT_SLT);
             `tick1
             ctrl = TB_SLTc;
 
-            // First iteration REG_8 = 2, REG_5 = 4 so (4 < 2) = 0
+            // First iteration t0 = 2, a0 = 4 so (4 < 2) = 0
             NOP(4);
-            assert_equal(32'h0, DUT.RF.rf[REG_9], "PIPELINE_TEST2::SLT");
+            assert_equal(32'h0, DUT.RF.rf[t0], "PIPELINE_TEST2::SLT");
 
-            // BEQ
-            instruction = set_instruction_i(OPCODE_BEQ, REG_9, REG_ZERO, branch_else);
+            // beq $t0, $0, else
+            instruction = set_instruction_i(OPCODE_BEQ, t0, REG_ZERO, branch_else);
             `tick1
             ctrl = TB_BEQc;
 
@@ -630,22 +640,22 @@ module tb_datapath;
 
             // Branch Taken
             if (pc >= correct_branch_addr) begin 
-                // Decrement n
-                instruction = set_instruction_i(OPCODE_ADDI, REG_5, REG_5, -16'd1);
+                // addi $a0, $a0, -1
+                instruction = set_instruction_i(OPCODE_ADDI, a0, a0, -16'd1);
                 `tick1
                 ctrl = TB_ADDIc;
             end
             // Branch Not Taken
             else begin 
-                // Load 1 into REG_7
-                instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_7, 16'd1);
+                // addi $v0, $0, 1
+                instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, v0, 16'd1);
                 `tick1
                 ctrl = TB_ADDIc;
-                // Add 8 to SP
+                // addi $sp, $sp, 8
                 instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, 16'd8);
                 `tick1
                 ctrl = TB_ADDIc;
-                // Jump to RA
+                // jr $ra
                 instruction = set_instruction_r(OPCODE_R, REG_RA, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_JR);
                 `tick1
                 ctrl = TB_JRc;
@@ -653,9 +663,99 @@ module tb_datapath;
 
             NOP(4);
             assert_greater_than(pc, correct_branch_addr, "PIPELINE_TEST2::FINAL_PC_DID_BRANCH");
-            assert_equal(32'd3, DUT.RF.rf[REG_5], "PIPELINE_TEST2::REG_5");
-            assert_not_equal(32'd1, DUT.RF.rf[REG_7], "PIPELINE_TEST2::REG_7");
+            assert_equal(32'd3, DUT.RF.rf[a0], "PIPELINE_TEST2::a0");
+            assert_not_equal(32'd1, DUT.RF.rf[v0], "PIPELINE_TEST2::v0");
             assert_not_equal(32'h208, DUT.RF.rf[REG_SP], "PIPELINE_TEST2::REG_SP");
+        end
+    endtask
+
+    task pipeline_test_3;
+        begin
+            automatic logic32 factorial_jump_addr = 32'b1000_0000;
+            automatic logic32 correct_jump_address = factorial_jump_addr << 2;
+            automatic logic32 a0_before_sw = 0;
+
+            // Setup
+                // From [main]
+                    // addi $a0, $0, 4
+                    instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, a0, 16'd4);
+                    `tick1
+                    ctrl = TB_ADDIc;
+                    // Fake a RA of 0x0ABC
+                    instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_RA, 16'h0ABC);
+                    `tick1
+                    ctrl = TB_ADDIc;
+                    NOP(4);
+                // From [factorial]
+                    // addi $v0, $0, 1
+                    instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, v0, 16'd1);
+                    `tick1
+                    ctrl = TB_ADDIc;
+                    // sw $ra, 0($sp)
+                    instruction = set_instruction_i(OPCODE_SW, REG_SP, REG_RA, 16'd0);
+                    `tick1
+                    ctrl = TB_SWc;
+                    // sw $a0, 4($sp)
+                    instruction = set_instruction_i(OPCODE_SW, REG_SP, a0, 16'd4);
+                    `tick1
+                    ctrl = TB_SWc;
+                    NOP(2);
+
+                    // Store contents of $a0 at this point to be fake-loaded from DM later
+                    a0_before_sw = DUT.RF.rf[a0];
+            // Setup
+
+            // addi $a0, $a0, -1
+            instruction = set_instruction_i(OPCODE_ADDI, a0, a0, -16'd1);
+            `tick1
+            ctrl = TB_ADDIc;
+
+            // jal factorial
+
+            // lw $ra, 0($sp)
+            instruction = set_instruction_i(OPCODE_LW, REG_SP, REG_RA, 16'd0);
+            `tick1
+            ctrl = TB_LWc;
+
+            // lw $a0, 4($sp)
+            instruction = set_instruction_i(OPCODE_LW, REG_SP, a0, 16'd4);
+            `tick1
+            ctrl = TB_LWc;
+
+            // addi $sp, $sp, 8
+            instruction = set_instruction_i(OPCODE_ADDI, REG_SP, REG_SP, 16'd8);
+            `tick1
+            ctrl = TB_ADDIc;
+
+            // Fake LW 0($sp)
+            dmem_rd = DUT.RF.rf[REG_RA];
+
+            // Data hazard : a0
+            NOP(1);
+
+            // Fake LW 4($sp)
+            dmem_rd = a0_before_sw;
+
+            // Data hazard : a0
+            NOP(1);
+
+            // multu $a0, $v0
+            instruction = set_instruction_r(OPCODE_R, a0, v0, ignore_rd, ignore_shamt, FUNCT_MULTU);
+            `tick1
+            ctrl = TB_MULTUc;
+
+            // mflo $v0
+            instruction = set_instruction_r(OPCODE_R, ignore_rs, ignore_rt, v0, ignore_shamt, FUNCT_MFLO);
+            `tick1
+            ctrl = TB_MFLOc;
+
+            NOP(4);
+            // $a0 starts at 4, stores to DM, decrements, then reloads from DM so = 4
+            assert_equal(32'd4,   DUT.RF.rf[a0],     "PIPELINE_TEST3::a0");
+            // $ra starts at 0xABC, stores to DM, reloads from DM so = 0xABC
+            assert_equal(32'hABC, DUT.RF.rf[REG_RA], "PIPELINE_TEST3::REG_RA");
+            assert_equal(32'h208, DUT.RF.rf[REG_SP], "PIPELINE_TEST3::REG_SP");
+            assert_equal(32'd4,   DUT.RF.rf[v0],     "PIPELINE_TEST3::v0");
         end
     endtask
 
@@ -677,46 +777,49 @@ module tb_datapath;
         // factorial:
         // pipeline_test_2;
 
+        // else:
+        // pipeline_test_3;
+
         //////////////////////////// Unit Tests
 
-        // // Test ADD
-        // test_add;
+        // Test ADD
+        test_add;
 
-        // // Test ADDI
-        // test_addi;
+        // Test ADDI
+        test_addi;
 
-        // // Test AND
-        // test_and;
+        // Test AND
+        test_and;
 
-        // // Test BEQ
-        // test_branch;
+        // Test BEQ
+        test_branch;
 
-        // // Test DIVU
-        // test_divide;
+        // Test DIVU
+        test_divide;
 
-        // // Test J
-        // test_j;
+        // Test J
+        test_j;
 
-        // // Test JAL
-        // test_jal;
+        // Test JAL
+        test_jal;
 
-        // // Test JR
-        // test_jr;
+        // Test JR
+        test_jr;
 
-        // // Test LW
-        // test_lw;
+        // Test LW
+        test_lw;
 
-        // // Test MULTU
-        // test_multiply;
+        // Test MULTU
+        test_multiply;
 
-        // // Test SLT
-        // test_slt;
+        // Test SLT
+        test_slt;
 
-        // // Test SUB
-        // test_sub;
+        // Test SUB
+        test_sub;
 
-        // // Test SW
-        // test_sw;
+        // Test SW
+        test_sw;
 
         // Results
         $display("///////////////////////////////////////////////////////////////////////");

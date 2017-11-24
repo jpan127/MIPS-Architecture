@@ -11,8 +11,8 @@ module tb_control_unit;
     ControlBus control_bus();
 
     // Testbench variables
-    logic        clock;
-    logic [9:0]  ctrl;
+    logic        clock, branch;
+    logic [8:0]  ctrl;
     integer      success_count;
     integer      fail_count;
 
@@ -23,8 +23,7 @@ module tb_control_unit;
         control_bus.Sender.sel_alu_b,      // 1 bit
         control_bus.Sender.dmem_we,        // 1 bit
         control_bus.Sender.sel_result,     // 2 bits
-        control_bus.Sender.sel_pc,         // 2 bits
-        control_bus.Sender.branch          // 1 bit
+        control_bus.Sender.sel_pc          // 2 bits
     };
 
     // Instructions
@@ -54,6 +53,7 @@ module tb_control_unit;
     (
         .opcode         (opcode),
         .funct          (funct),
+        .branch         (branch),
         .control_bus    (control_bus.Sender)
     );
 
@@ -71,7 +71,7 @@ module tb_control_unit;
     initial begin forever #5 clock = ~clock; end
 
     // Asserts the correct control logic is beign set
-    logic [9:0] c;
+    logic [10:0] c;
     task test_instruction;
         input logic [11:0]  instruction;
         input control_t     control;
@@ -114,11 +114,11 @@ module tb_control_unit;
         test_instruction(JAL, JALc, "JAL");
 
         // Branch if Equal, Not Equal
-        control_bus.Sender.zero = 0;
-        test_instruction(BEQ, BEQc, "BEQN");
+        branch = 0;
+        test_instruction(BEQ, BEQNc, "BEQN");
 
         // Branch if Equal, Equal
-        control_bus.Sender.zero = 1;
+        branch = 1;
         test_instruction(BEQ, BEQc, "BEQY");
 
         // Jump Register

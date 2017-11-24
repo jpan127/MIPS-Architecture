@@ -20,9 +20,8 @@ module datapath
     output  [31:0]  d_instruction,                      // Needs to be outputted to the CU so the CU gets the delay too
     output          branch,
     // Interfaces
-    DebugBus.InputBus       debug_in,
-    DebugBus.OutputBus      debug_out,
-    ControlBus.Receiver     control_bus     );
+    DebugBus            debug_bus,
+    ControlBus.Receiver control_bus     );
 
     // Packages
     import global_types::*;
@@ -76,21 +75,20 @@ module datapath
     logic  jump;
     logic2 sel_pc;
 
-    assign pc_plus4  = add(fetch_bus.f_pc, 32'd4);                                  // From fetch
+    assign pc_plus4 = add(fetch_bus.f_pc, 32'd4);                                   // From fetch
 
     // If the instruction coming from IMEM is a jump type, set the PC to jump before decode
     // Otherwise sel_pc comes directly from control unit after decode
-    assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL); // From fetch
-    assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (control_bus.sel_pc);
+    assign jump      = (instruction[31:26] == OPCODE_J | instruction[31:26] == OPCODE_JAL);
     assign jump_addr = { pc_plus4[31:28], instruction[25:0], 2'b00 };
-
+    assign sel_pc    = (jump) ? (logic2'(SEL_PC_JUMP)) : (control_bus.sel_pc);
 
     mux4 #(32) MUX_PC
     ( 
         .a          (pc_plus4),                                                     // From fetch
         .b          (branch_addr),                                                  // From memory
         .c          (jump_addr),                                                    // From memory
-        .d          (result),                                                       // From writeback
+        .d          (execute_bus.d_rd0),                                            // From decode
         .sel        (sel_pc),                                                       // From memory
         .y          (fetch_bus.w_pc)
     );
@@ -119,16 +117,16 @@ module datapath
         .decode_bus (decode_bus)
     );
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                    PIPELINE : EXECUTE                                     //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
     logic32 sign_imm;
     // Branch logic + address
     assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1) & (decode_bus.d_instruction[31:26] == OPCODE_BEQ);
     assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
     assign sign_imm_sh = shift_left_2(sign_imm);
     assign branch_addr = add(decode_bus.d_pc_plus4, sign_imm_sh);                   // From decode
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                    PIPELINE : EXECUTE                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Bus Inputs
     assign execute_bus.d_pc_plus4    = decode_bus.d_pc_plus4;                        // From decode
@@ -153,8 +151,8 @@ module datapath
         .wa         (writeback_bus.w_rf_wa),                                        // From writeback
         .ra0        (ra0),                                                          // From decode
         .ra1        (ra1),                                                          // From decode
-        .ra2        (debug_in.rf_ra),  
-        .rd2        (debug_out.rf_rd), 
+        .ra2        (debug_bus.rf_ra),  
+        .rd2        (debug_bus.rf_rd), 
         .wd         (result),                                                       // From writeback
         .rd0        (execute_bus.d_rd0),                                            // To execute
         .rd1        (execute_bus.d_rd1)                                             // To execute

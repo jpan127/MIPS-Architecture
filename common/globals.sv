@@ -129,7 +129,7 @@ package global_types;
         SEL_PC_PC_PLUS4  = 2'b00,
         SEL_PC_BRANCH    = 2'b01,
         SEL_PC_JUMP      = 2'b10,
-        SEL_PC_RESULT    = 2'b11
+        SEL_PC_JR        = 2'b11
     } sel_pc_t;
 
     typedef enum logic
@@ -227,13 +227,13 @@ package control_signals;
     // Control unit control struct (11 bits)
     typedef struct packed
     {
-        rf_we_t      rf_we;
-        sel_wa_t     sel_wa;
-        sel_alu_b_t  sel_alu_b;
-        dmem_we_t    dmem_we;
-        sel_result_t sel_result;
-        sel_pc_t     sel_pc;
-        alu_op_t     alu_op;
+        rf_we_t      rf_we;         // 1 bit
+        sel_wa_t     sel_wa;        // 2 bits
+        sel_alu_b_t  sel_alu_b;     // 1 bit
+        dmem_we_t    dmem_we;       // 1 bit
+        sel_result_t sel_result;    // 2 bits
+        sel_pc_t     sel_pc;        // 2 bits
+        alu_op_t     alu_op;        // 2 bits
     } control_t;
 
     // Control unit control signals for each instruction
@@ -249,7 +249,7 @@ package control_signals;
     Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JUMP,     ALU_OP_ADDI },
     JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,  SEL_PC_JUMP,     ALU_OP_ADDI },
     // R-Type
-    JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_RESULT,   ALU_OP_R    },    
+    JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JR,       ALU_OP_R    },    
     Rc      = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
     ADDc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
     ORc     = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
