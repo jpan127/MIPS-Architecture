@@ -120,7 +120,7 @@ package global_types;
         SEL_RESULT_DONT_CARE = 2'bZ,
         SEL_RESULT_RD        = 2'b00,
         SEL_RESULT_ALU_OUT   = 2'b01,
-        SEL_RESULT_PC_PLUS4  = 2'b10,
+        SEL_RESULT_PC_PLUS8  = 2'b10,
         SEL_RESULT_00        = 2'b11
     } sel_result_t;
 
@@ -251,7 +251,7 @@ package control_signals;
     // J-Type
     // sel_pc should select jump but since it is being overridden before the control unit, then selecting jump would jump twice
     Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_ADDI },
-    JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,  SEL_PC_PC_PLUS4, ALU_OP_ADDI },
+    JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS8,  SEL_PC_PC_PLUS4, ALU_OP_ADDI },
     // R-Type
     NOPc    = '{ RF_WE_DISABLE, SEL_WA_00,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_00,        SEL_PC_PC_PLUS4, ALU_OP_R    },    
     JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JR,       ALU_OP_R    },    
