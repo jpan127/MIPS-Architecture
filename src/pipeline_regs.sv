@@ -5,12 +5,12 @@ module fetch_reg
     // Packages
     import pipeline_pkg::FetchBus;
 
-(   input    clock, reset, flush,
+(   input    clock, reset, stall,
     FetchBus fetch_bus     );
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset || stall) begin
             fetch_bus.f_pc <= 0;
         end else begin
             fetch_bus.f_pc <= fetch_bus.w_pc;
@@ -24,12 +24,12 @@ module decode_reg
     // Packages
     import pipeline_pkg::DecodeBus;
 
-(   input       clock, reset, flush,
+(   input       clock, reset, stall,
     DecodeBus   decode_bus    );
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset || stall) begin
             decode_bus.d_instruction <= 0;
             decode_bus.d_pc_plus4    <= 0;
         end else begin
@@ -54,6 +54,7 @@ module execute_reg
         if (reset || flush) begin
             execute_bus.e_rd0      <= 0;
             execute_bus.e_rd1      <= 0;
+            execute_bus.e_rs       <= 0;
             execute_bus.e_wa0      <= 0;
             execute_bus.e_wa1      <= 0;
             execute_bus.e_sign_imm <= 0;
@@ -61,6 +62,7 @@ module execute_reg
         end else begin
             execute_bus.e_rd0      <= execute_bus.d_rd0;
             execute_bus.e_rd1      <= execute_bus.d_rd1;
+            execute_bus.e_rs       <= execute_bus.d_rs;
             execute_bus.e_wa0      <= execute_bus.d_wa0;
             execute_bus.e_wa1      <= execute_bus.d_wa1;
             execute_bus.e_sign_imm <= execute_bus.d_sign_imm;
@@ -95,12 +97,12 @@ module memory_reg
     import pipeline_pkg::MemoryBus;
     import global_types::*;
 
-(   input       clock, reset, flush,
+(   input       clock, reset,
     MemoryBus   memory_bus    );
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset) begin
             memory_bus.m_alu_out  <= 0;
             memory_bus.m_dmem_wd  <= 0;
             memory_bus.m_rf_wa    <= 0;
@@ -115,7 +117,7 @@ module memory_reg
 
     // Control Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset) begin
             memory_bus.m_rf_we      <= rf_we_t'(0);
             memory_bus.m_sel_result <= sel_result_t'(0);
             memory_bus.m_dmem_we    <= dmem_we_t'(0);
@@ -128,7 +130,7 @@ module memory_reg
 
     // Status Signals
     always_ff @(posedge clock or posedge reset) begin 
-        if (reset || flush) begin 
+        if (reset) begin 
             memory_bus.m_zero <= 0;
         end
         else begin 
@@ -144,12 +146,12 @@ module writeback_reg
     import pipeline_pkg::WritebackBus;
     import global_types::*;
 
-(   input           clock, reset, flush,
+(   input           clock, reset,
     WritebackBus    writeback_bus    );
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset) begin
             writeback_bus.w_dmem_rd  <= 0;
             writeback_bus.w_alu_out  <= 0;
             writeback_bus.w_rf_wa    <= 0;
@@ -164,7 +166,7 @@ module writeback_reg
 
     // Control Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || flush) begin
+        if (reset) begin
             writeback_bus.w_rf_we      <= rf_we_t'(0);
             writeback_bus.w_sel_result <= sel_result_t'(0);
         end else begin

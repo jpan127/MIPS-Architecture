@@ -55,17 +55,23 @@ module datapath
     assign dmem_wd          = memory_bus.m_dmem_wd;
 
     // Hazard Controller
-    logic f_flush, d_flush, e_flush, m_flush, w_flush;
-    flusher FLUSHER
+    logic f_stall, d_stall, e_flush, forward_alu_a, forward_alu_b;
+    hazard_controller HAZARD_CONTROLLER
     (
-        .clock       (clock),
-        .reset       (reset),
-        .instruction (instruction),
-        .f_flush     (f_flush), 
-        .d_flush     (d_flush), 
-        .e_flush     (e_flush), 
-        .m_flush     (m_flush), 
-        .w_flush     (w_flush)
+        .d_rs          (decode_bus.d_instruction[25:21]),
+        .d_rt          (decode_bus.d_instruction[20:16]),
+        .e_rs          (execute_bus.e_rs),
+        .e_rt          (execute_bus.e_wa0),
+        .m_rf_wa       (memory_bus.m_rf_wa),
+        .w_rf_wa       (writeback_bus.w_rf_wa),
+        .m_rf_we       (memory_bus.m_rf_we),
+        .w_rf_we       (writeback_bus.w_rf_we),
+        .w_sel_result  (w_sel_result),
+        .forward_alu_a (forward_alu_a),
+        .forward_alu_b (forward_alu_b),
+        .f_stall       (f_stall),
+        .d_stall       (d_stall),
+        .e_flush       (e_flush)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +103,7 @@ module datapath
     (
         .clock      (clock),
         .reset      (reset),
-        .flush      (f_flush),
+        .flush      (f_stall),
         .fetch_bus  (fetch_bus)
     );
 
@@ -113,7 +119,7 @@ module datapath
     (
         .clock      (clock),
         .reset      (reset),
-        .flush      (d_flush),
+        .flush      (d_stall),
         .decode_bus (decode_bus)
     );
 
@@ -214,7 +220,6 @@ module datapath
     (
         .clock       (clock),
         .reset       (reset),
-        .flush       (m_flush),
         .memory_bus  (memory_bus)
     );
 
@@ -247,7 +252,6 @@ module datapath
     (
         .clock         (clock),
         .reset         (reset),
-        .flush         (w_flush),
         .writeback_bus (writeback_bus)
     );
 
