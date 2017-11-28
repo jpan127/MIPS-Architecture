@@ -17,7 +17,7 @@ module datapath
     // To / From memories
     output  [31:0]  pc, alu_out, dmem_wd,
     // After decode, to Control Unit
-    output  [31:0]  d_instruction,                      // Needs to be outputted to the CU so the CU gets the delay too
+    output  [31:0]  d_instruction,          // Needs to be outputted to the CU so the CU gets the delay too
     output          branch,
     // Interfaces
     DebugBus            debug_bus,
@@ -27,6 +27,10 @@ module datapath
     import global_types::*;
     import global_functions::*;
     import pipeline_pkg::*;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                      Internal Wires                                       //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     localparam UNUSED_5  = 5'd0;
     localparam UNUSED_32 = 32'd0;
@@ -38,13 +42,21 @@ module datapath
     MemoryBus    memory_bus;
     WritebackBus writeback_bus;
 
-    // Internal wires
-    logic5   ra0, ra1;                       // Register file
-    logic32  pc_plus4;                       // PC addresses
-    logic32  jump_addr;                      // Jump address
-    logic32  sign_imm_sh;                    // After sign extend
-    logic32  alu_b, result;                  // ALU
-    logic32  branch_addr;
+    // Fetch
+    logic   jump;
+    logic32 jump_addr, pc_plus4;
+    logic2  sel_pc;
+
+    // Decode
+    logic32 branch_addr, sign_imm, sign_imm_sh;
+    logic5  ra0, ra1;
+
+    // Execute
+    logic32 alu_a, alu_b, forward_alu_b;
+
+    // Writeback
+    logic32 pc_plus8;
+    logic32 result;
 
     // Datapath outputs
     assign pc               = fetch_bus.f_pc;
@@ -54,32 +66,35 @@ module datapath
     assign alu_out          = memory_bus.m_alu_out;
     assign dmem_wd          = memory_bus.m_dmem_wd;
 
-    // Hazard Controller
-    logic f_stall, d_stall, e_flush, forward_alu_a, forward_alu_b;
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                     HAZARD CONTROLLER                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    logic  f_stall, d_stall, e_flush;
+    logic2 sel_forward_alu_a, sel_forward_alu_b;
     hazard_controller HAZARD_CONTROLLER
     (
-        .d_rs          (decode_bus.d_instruction[25:21]),
-        .d_rt          (decode_bus.d_instruction[20:16]),
-        .e_rs          (execute_bus.e_rs),
-        .e_rt          (execute_bus.e_wa0),
-        .m_rf_wa       (memory_bus.m_rf_wa),
-        .w_rf_wa       (writeback_bus.w_rf_wa),
-        .m_rf_we       (memory_bus.m_rf_we),
-        .w_rf_we       (writeback_bus.w_rf_we),
-        .w_sel_result  (w_sel_result),
-        .forward_alu_a (forward_alu_a),
-        .forward_alu_b (forward_alu_b),
-        .f_stall       (f_stall),
-        .d_stall       (d_stall),
-        .e_flush       (e_flush)
+        .reset             (reset),
+        .d_rs              (ra0),
+        .d_rt              (ra1),
+        .e_rs              (execute_bus.e_rs),
+        .e_rt              (execute_bus.e_wa0),
+        .m_rf_wa           (memory_bus.m_rf_wa),
+        .w_rf_wa           (writeback_bus.w_rf_wa),
+        .m_rf_we           (memory_bus.m_rf_we),
+        .w_rf_we           (writeback_bus.w_rf_we),
+        .w_sel_result      (writeback_bus.w_sel_result),
+        .sel_forward_alu_a (sel_forward_alu_a),
+        .sel_forward_alu_b (sel_forward_alu_b),
+        .f_stall           (f_stall),
+        .d_stall           (d_stall),
+        .e_flush           (e_flush)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     PIPELINE : FETCH                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    logic  jump;
-    logic2 sel_pc;
 
     assign pc_plus4 = add(fetch_bus.f_pc, 32'd4);                                   // From fetch
 
@@ -103,7 +118,7 @@ module datapath
     (
         .clock      (clock),
         .reset      (reset),
-        .flush      (f_stall),
+        .stall      (f_stall),
         .fetch_bus  (fetch_bus)
     );
 
@@ -119,11 +134,10 @@ module datapath
     (
         .clock      (clock),
         .reset      (reset),
-        .flush      (d_stall),
+        .stall      (d_stall),
         .decode_bus (decode_bus)
     );
 
-    logic32 sign_imm;
     // Branch logic + address
     assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1) & (decode_bus.d_instruction[31:26] == OPCODE_BEQ);
     assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
@@ -141,6 +155,7 @@ module datapath
     assign ra1                       = decode_bus.d_instruction[20:16];              // From decode
     assign execute_bus.d_wa0         = decode_bus.d_instruction[20:16];              // From decode (I-Type)
     assign execute_bus.d_wa1         = decode_bus.d_instruction[15:11];              // From decode (R-Type)
+    assign execute_bus.d_rs          = ra0;
     assign execute_bus.d_sign_imm    = sign_imm;
     // Store control signals
     assign execute_bus.d_alu_ctrl    = control_bus.alu_ctrl;                         // From decode (control unit)
@@ -176,13 +191,52 @@ module datapath
     //                                     PIPELINE : MEMORY                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
     // Bus Inputs
     assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;                             // From execute
     assign memory_bus.e_rf_we      = execute_bus.e_rf_we;                           // From execute
     assign memory_bus.e_sel_result = execute_bus.e_sel_result;                      // From execute
     assign memory_bus.e_dmem_we    = execute_bus.e_dmem_we;                         // From execute
     assign memory_bus.e_pc_plus4   = execute_bus.e_pc_plus4;                        // From execute
+
+    mux4 #(32) MUX_FORWARD_A
+    (
+        .a          (execute_bus.e_rd0),                                            // From execute
+        .b          (result),                                                       // From writeback
+        .c          (memory_bus.m_alu_out),                                         // From memory
+        .d          (UNUSED_32),
+        .sel        (sel_forward_alu_a),                                            // From hazard
+        .y          (alu_a)
+    );
+
+    mux4 #(32) MUX_FORWARD_B
+    (
+        .a          (execute_bus.e_rd1),                                            // From execute
+        .b          (result),                                                       // From writeback
+        .c          (memory_bus.m_alu_out),                                         // From memory
+        .d          (UNUSED_32),
+        .sel        (sel_forward_alu_b),                                            // From hazard
+        .y          (forward_alu_b)
+    );
+
+    // Selects which signal goes to the ALU port B : RF read port 2 or sign immediate output
+    mux2 MUX_ALU_B
+    ( 
+        .a          (forward_alu_b),                                                // From execute
+        .b          (execute_bus.e_sign_imm),                                       // From execute
+        .sel        (execute_bus.e_sel_alu_b),                                      // From execute
+        .y          (alu_b) 
+    );
+
+    alu ALU
+    ( 
+        .clock      (clock), 
+        .reset      (reset), 
+        .a          (alu_a),                                                        // From execute / forward
+        .b          (alu_b), 
+        .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
+        .y          (memory_bus.e_alu_out),                                         // To memory
+        .zero       (memory_bus.e_zero)                                             // To memory
+    );
 
     // Selects which is the write address
     mux4 #(5) MUX_WA    
@@ -195,27 +249,6 @@ module datapath
         .y          (memory_bus.e_rf_wa)                                            // To memory
     );
 
-    // Selects which signal goes to the ALU port B : RF read port 2 or sign immediate output
-    mux2 MUX_ALU_B
-    ( 
-        .a          (execute_bus.e_rd1),                                            // From execute
-        .b          (execute_bus.e_sign_imm),                                       // From execute
-        .sel        (execute_bus.e_sel_alu_b),                                      // From execute
-        .y          (alu_b) 
-    );
-
-    alu ALU
-    ( 
-        .clock      (clock), 
-        .reset      (reset), 
-        .a          (execute_bus.e_rd0),                                            // From execute
-        .b          (alu_b), 
-        .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
-        .y          (memory_bus.e_alu_out),                                         // To memory
-        .zero       (memory_bus.e_zero)                                             // To memory
-    );
-
-
     memory_reg MEMORY_REGISTER
     (
         .clock       (clock),
@@ -227,7 +260,6 @@ module datapath
     //                                   PIPELINE : WRITEBACK                                    //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    logic32 pc_plus8;
     assign pc_plus8 = add(writeback_bus.w_pc_plus4, 32'd4);                         // From writeback
 
     // Bus Inputs

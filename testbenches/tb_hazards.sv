@@ -14,36 +14,30 @@ module tb_hazards;
     import global_types::*;
 
     // DUT ports
-    logic    clock, reset;           // Input
-    logic32  instruction, dmem_rd;   // Input
-    logic    dmem_we;                // Output
-    logic32  pc, alu_out, dmem_wd;   // Output
-    DebugBus debug_bus();
+    // Inputs
+    logic6 d_rs, d_rt, e_rs, e_rt;                // Register operands
+    logic6 m_rf_wa, w_rf_wa;                      // RF write register 1-2 stages ahead
+    logic  m_rf_we, w_rf_we;                      // RF write enable 1-2 stages ahead
+    logic2 w_sel_result;                          // Mux result select control signal
+    // Outputs
+    logic2 sel_forward_alu_a, sel_forward_alu_b;  // Mux forward select control signals
+    logic  f_stall, d_stall, e_flush;             // Stall/Freeze control signals
 
-    // Testbench Variables
-    localparam  logic5 ignore_rs    = 'd0,
-                       ignore_rt    = 'd0,
-                       ignore_rd    = 'd0,
-                       ignore_shamt = 'd0,
-                       ignore_funct = 'd0;
-    integer i;
-    integer success_count;
-    integer fail_count;
-    integer instructions_tested;
 
     // Device Under Testing
-    mips DUT(.*);
+    hazard_controller DUT(.*);
 
     // Initial state
     initial begin 
-        clock               = 0;
-        reset               = 0;
-        instruction         = 0;
-        dmem_rd             = 0;
-        i                   = 0;
-        success_count       = 0;
-        fail_count          = 0;
-        instructions_tested = 0;
+        d_rs         = 0;
+        d_rt         = 0;
+        e_rs         = 0;
+        e_rt         = 0;
+        m_rf_wa      = 0;
+        w_rf_wa      = 0;
+        m_rf_we      = 0;
+        w_rf_we      = 0;
+        w_sel_result = 0;
     end
 
     // Asserts two values are equal, returns 1 for yes, 0 for no
@@ -54,70 +48,42 @@ module tb_hazards;
         begin 
             assert(expected == actual)
             begin
-                $display("[%s] SUCCESS", name);
-                success_count++;
                 return 1;
             end
             else
             begin
                 $error("[%s] FAILED EQUAL Expected: %d Actual: %d", name, expected, actual);
-                fail_count++;
                 return 0;
             end
         end
     endfunction
 
-    task NOP(logic5 cycles);
-        begin 
-            for (i=0; i<cycles; i++) begin 
-                `tick1
-                instruction = set_instruction_r(OPCODE_R, REG_ZERO, REG_ZERO, REG_ZERO, ignore_shamt, FUNCT_ADD);
-            end
-        end
-    endtask
-
-    // Generate a #10 period clock
-    always #5 clock = ~clock;
-
     // Testbench
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
 
-        // Load a value into R[5] and R[6]
-        instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_5, 16'b1111_0000);
-        `tick1
-        instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_6, 16'b1010_0000);
-        `tick1
-        instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_7, 16'b0000_1111);
-        `tick1
-        instruction = set_instruction_i(OPCODE_ADDI, REG_ZERO, REG_8, 16'b1);
-        NOP(4);
-        // Load the value into DMEM
-        instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, 16'd0);
-        NOP(4);
-        // Load word
-        instruction = set_instruction_i(OPCODE_LW, REG_ZERO, REG_5, 16'd0);
-        `tick1
-        // AND it with R[6]
-        instruction = set_instruction_r(OPCODE_R, REG_5, REG_6, REG_10, ignore_shamt, FUNCT_ADD);
-        `tick1
-        // OR it with R[7]
-        instruction = set_instruction_r(OPCODE_R, REG_5, REG_7, REG_11, ignore_shamt, FUNCT_OR);
-        `tick1
-        // SUB it with R[9]
-        instruction = set_instruction_r(OPCODE_R, REG_5, REG_8, REG_12, ignore_shamt, FUNCT_SUB);
-        `tick1
+        for (int i=0; i<4; i++) begin 
+            w_sel_result = i;
+            for (int j=0; j<64; j++) begin 
+                d_rs = j;
+                for (int k=0; k<64; k++) begin 
+                    d_rt = k;
+                    for (int l=0; l<64; l++) begin 
+                        e_rs = l;
+                        for (int m=0; m<64; m++) begin 
+                            e_rt = m;
+                            #1;
+                            if ( ((d_rs == e_rt) | (d_rt == e_rt)) & w_sel_result == SEL_RESULT_RD ) begin 
+                                assert_equal(1'b1, e_flush, "e_flush");
+                                assert_equal(1'b1, f_stall, "f_stall");
+                                assert_equal(1'b1, d_stall, "d_stall");
+                            end
+                        end
+                    end
+                end
+            end
+        end
 
-        NOP(4);
-
-        assert_equal(32'b1010_0000, DUT.DP.RF.rf[REG_10], "R[10]");
-        assert_equal(32'b1111_1111, DUT.DP.RF.rf[REG_11], "R[11]");
-        assert_equal(32'b1110_1111, DUT.DP.RF.rf[REG_12], "R[12]");
-
-        // Results
-        $display("///////////////////////////////////////////////////////////////////////");
-        $display("Instructions Tested: %d | Success Count: %d | Fail Count: %d", 
-                  instructions_tested[5:0], success_count[5:0], fail_count[5:0]);
         $display("///////////////////////////////////////////////////////////////////////");
         $stop;
     end

@@ -2,25 +2,33 @@
 
 module staller
 
-(   input [5:0] d_rs, e_rt, d_rt, e_rt,
-    input [1:0] w_sel_result,
-    output      f_stall, d_stall, e_flush );
+(   input        reset,
+    input [4:0]  d_rs, e_rt, d_rt,
+    input [1:0]  w_sel_result,
+    output logic f_stall, d_stall, e_flush );
 
     import global_types::*;
 
     // If decode rs / rt is the same as rt at execute stage,
     // If also instruction is LW,
     // Then stall/freeze FETCH and DECODE then flush EXECUTE 
-    assign { f_stall, d_stall, e_flush } = ( ((d_rs == e_rt) | (d_rt == e_rt)) & w_sel_result == SEL_RESULT_RD ) ? (3'b111) : (3'b000);
+    always_comb begin 
+        if ((!reset) && ((d_rs == e_rt) | (d_rt == e_rt)) && (w_sel_result == SEL_RESULT_RD)) begin 
+            { f_stall, d_stall, e_flush } = 3'b111;
+        end
+        else begin 
+            { f_stall, d_stall, e_flush } = 3'b000;
+        end
+    end
 
 endmodule
 
 module forwarder
 
-(   input  [5:0] e_rs, e_rt,
-    input  [5:0] m_rf_wa, w_rf_wa,
-    input        m_rf_we, w_rf_we,
-    output [1:0] forward_alu_a, forward_alu_b );
+(   input        [4:0] e_rs, e_rt,
+    input        [4:0] m_rf_wa, w_rf_wa,
+    input              m_rf_we, w_rf_we,
+    output logic [1:0] forward_alu_a, forward_alu_b );
 
     // Forward for ALU port a
     always_comb begin
@@ -66,12 +74,13 @@ endmodule
 
 module hazard_controller
 
-(   input  [5:0] d_rs, d_rt, e_rs, e_rt,            // Register operands
-    input  [5:0] m_rf_wa, w_rf_wa,                  // RF write register 1-2 stages ahead
-    input        m_rf_we, w_rf_we,                  // RF write enable 1-2 stages ahead
-    input  [1:0] w_sel_result,                      // Mux result select control signal
-    output [1:0] forward_alu_a, forward_alu_b,      // Mux forward select control signals
-    output       f_stall, d_stall, e_flush    );    // Stall/Freeze control signals
+(   input        reset,                                 // Just so does not trigger on reset
+    input  [4:0] d_rs, d_rt, e_rs, e_rt,                // Register operands
+    input  [4:0] m_rf_wa, w_rf_wa,                      // RF write register 1-2 stages ahead
+    input        m_rf_we, w_rf_we,                      // RF write enable 1-2 stages ahead
+    input  [1:0] w_sel_result,                          // Mux result select control signal
+    output [1:0] sel_forward_alu_a, sel_forward_alu_b,  // Mux forward select control signals
+    output       f_stall, d_stall, e_flush    );        // Stall/Freeze control signals
 
     staller STALL_CONTROLLER
     (
@@ -92,8 +101,8 @@ module hazard_controller
         .w_rf_wa       (w_rf_wa),
         .m_rf_we       (m_rf_we),
         .w_rf_we       (w_rf_we),
-        .forward_alu_a (forward_alu_a),
-        .forward_alu_b (forward_alu_b)
+        .forward_alu_a (sel_forward_alu_a),
+        .forward_alu_b (sel_forward_alu_b)
     );
 
 endmodule

@@ -318,14 +318,14 @@ module tb_mips;
 
             // Write FFFF_FFFF into R[5]
             instruction = set_instruction_i(OPCODE_LW, REG_ZERO, REG_5, offset_address);
-            NOP(2);
+            NOP(3);
 
             // Assert it calculated the correct address = 5
             assert_equal(dmem_address, alu_out, "LW::DMEM_ADDRESS");
             NOP(2);
             
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
-            NOP(2);
+            NOP(3);
 
             // Assert the correct value was loaded into R[5] by using SW and looking at dmem_wd
             assert_equal(32'hFFFF_FFFF, dmem_wd, "LW::DMEM_WD");
@@ -394,7 +394,7 @@ module tb_mips;
             // R[20] = 0x9
             load_reg(REG_20, 16'h9);
 
-            instruction = set_instruction_r(OPCODE_R, REG_21, REG_20, REG_22, ignore_shamt, FUNCT_SLT);
+            instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
             NOP(5);
 
             // R[22] = 0x9 < 0xA != 0
@@ -432,7 +432,7 @@ module tb_mips;
 
             // Store R[5] into 0x5
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
-            NOP(2);
+            NOP(3);
 
             // The data was sign extended
             assert_equal(sexted_data, dmem_wd, "SW");

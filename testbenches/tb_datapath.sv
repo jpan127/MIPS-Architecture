@@ -395,7 +395,7 @@ module tb_datapath;
             instruction = set_instruction_i(OPCODE_LW, REG_ZERO, REG_5, offset_address);
             `tick1
             ctrl = TB_LWc;
-            NOP(1);
+            NOP(2);
 
             // Assert it calculated the correct address = 5
             assert_equal(dmem_address, alu_out, "LW::DMEM_ADDRESS");
@@ -405,7 +405,7 @@ module tb_datapath;
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
             `tick1
             ctrl = TB_SWc;
-            NOP(1);
+            NOP(2);
 
             // Assert the correct value was loaded into R[5] by using SW and looking at dmem_wd
             assert_equal(32'hFFFF_FFFF, dmem_wd, "LW::DMEM_WD");
@@ -489,7 +489,7 @@ module tb_datapath;
             // R[20] = 0x9
             load_reg(REG_20, 16'h9);
 
-            instruction = set_instruction_r(OPCODE_R, REG_21, REG_20, REG_22, ignore_shamt, FUNCT_SLT);
+            instruction = set_instruction_r(OPCODE_R, REG_20, REG_21, REG_22, ignore_shamt, FUNCT_SLT);
             `tick1
             ctrl = TB_SLTc;
             NOP(4);
@@ -533,7 +533,7 @@ module tb_datapath;
             instruction = set_instruction_i(OPCODE_SW, REG_ZERO, REG_5, offset_address);
             `tick1
             ctrl = TB_SWc;
-            NOP(1);
+            NOP(2);
 
             // The data was sign extended
             assert_equal(sexted_data, dmem_wd, "SW");
@@ -616,7 +616,7 @@ module tb_datapath;
             ctrl = TB_ADDIc;
             NOP(4);
             // slt $t0, $a0, $t0
-            instruction = set_instruction_r(OPCODE_R, t0, a0, t0, ignore_shamt, FUNCT_SLT);
+            instruction = set_instruction_r(OPCODE_R, a0, t0, t0, ignore_shamt, FUNCT_SLT);
             `tick1
             ctrl = TB_SLTc;
 
@@ -782,44 +782,44 @@ module tb_datapath;
 
         //////////////////////////// Unit Tests
 
-        // Test ADD
-        test_add;
+        // // Test ADD
+        // test_add;
 
-        // Test ADDI
-        test_addi;
+        // // Test ADDI
+        // test_addi;
 
-        // Test AND
-        test_and;
+        // // Test AND
+        // test_and;
 
-        // Test BEQ
-        test_branch;
+        // // Test BEQ
+        // test_branch;
 
-        // Test DIVU
-        test_divide;
+        // // Test DIVU
+        // test_divide;
 
-        // Test J
-        test_j;
+        // // Test J
+        // test_j;
 
-        // Test JAL
-        test_jal;
+        // // Test JAL
+        // test_jal;
 
-        // Test JR
-        test_jr;
+        // // Test JR
+        // test_jr;
 
-        // Test LW
-        test_lw;
+        // // Test LW
+        // test_lw;
 
-        // Test MULTU
-        test_multiply;
+        // // Test MULTU
+        // test_multiply;
 
-        // Test SLT
-        test_slt;
+        // // Test SLT
+        // test_slt;
 
-        // Test SUB
-        test_sub;
+        // // Test SUB
+        // test_sub;
 
-        // Test SW
-        test_sw;
+        // // Test SW
+        // test_sw;
 
         // Results
         $display("///////////////////////////////////////////////////////////////////////");

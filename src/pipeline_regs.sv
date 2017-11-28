@@ -10,9 +10,13 @@ module fetch_reg
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || stall) begin
+        if (reset) begin
             fetch_bus.f_pc <= 0;
-        end else begin
+        end
+        else if (stall) begin 
+            fetch_bus.f_pc <= fetch_bus.f_pc;
+        end
+        else begin
             fetch_bus.f_pc <= fetch_bus.w_pc;
         end
     end
@@ -29,10 +33,15 @@ module decode_reg
 
     // Datapath Signals
     always_ff @(posedge clock or posedge reset) begin
-        if (reset || stall) begin
+        if (reset) begin
             decode_bus.d_instruction <= 0;
             decode_bus.d_pc_plus4    <= 0;
-        end else begin
+        end
+        else if (stall) begin 
+            decode_bus.d_instruction <= decode_bus.d_instruction;
+            decode_bus.d_pc_plus4    <= decode_bus.d_pc_plus4;
+        end
+        else begin
             decode_bus.d_instruction <= decode_bus.f_instruction;
             decode_bus.d_pc_plus4    <= decode_bus.f_pc_plus4;
         end

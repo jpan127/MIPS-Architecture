@@ -21,7 +21,7 @@ module imem
         for (i=0; i<1024; i++) begin 
             rom[i] = 0;
         end
-        $readmemh("memfile.dat", rom);
+        $readmemh("memfile_hazards.dat", rom);
     end
     
     // Read
