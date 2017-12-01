@@ -7,7 +7,7 @@
 // Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
-module tb_hazards;
+module tb_mips_hazards;
 
     // Packages
     import testbench_globals::*;

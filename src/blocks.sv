@@ -39,7 +39,7 @@ module regfile
     end
 
     // Clock triggered write operation
-    always_ff @ (posedge clock) begin
+    always_ff @ (negedge clock) begin
         if (we && wa != 0) rf[wa] <= wd;
     end
 

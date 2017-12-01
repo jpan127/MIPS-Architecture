@@ -96,11 +96,11 @@ module tb_system;
                         10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
                         10'h1F8: assert_equal(32'hC,  dmem_wd, "DMEM_WD 2" );   // Assembler says 0x8 but we use JAL = PC + 8
                         10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
-                        10'h1F0: assert_equal(32'h54, dmem_wd, "DMEM_WD 4" );
+                        10'h1F0: assert_equal(32'h58, dmem_wd, "DMEM_WD 4" );
                         10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
-                        10'h1E8: assert_equal(32'h54, dmem_wd, "DMEM_WD 6" );
+                        10'h1E8: assert_equal(32'h58, dmem_wd, "DMEM_WD 6" );
                         10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
-                        10'h1E0: assert_equal(32'h54, dmem_wd, "DMEM_WD 8" );
+                        10'h1E0: assert_equal(32'h58, dmem_wd, "DMEM_WD 8" );
                     endcase
                 end
             end

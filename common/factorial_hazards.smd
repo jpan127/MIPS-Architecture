@@ -1,38 +1,37 @@
 # Currently the output is correct somehow??
-# Need to replace register names with numbers
 main:
-    addi $a0, $0, 4
+    addi $4, $0, 4
     jal  factorial
     nop
     nop
-    add $s0, $v0, $0
+    add $6, $7, $0
     j end
 
 factorial:
     addi $sp, $sp, -8
-    sw $a0, 4($sp) # This needs forward from <result> but is not getting it which messes everything up
+    sw $4, 4($sp) # This needs forward from <result : $4=4> but is not getting it which messes everything up
     sw $ra, 0($sp)
-    addi $t0, $0, 2
-    slt $t0, $a0, $t0
-    beq $t0, $0, else
+    addi $8, $0, 2
+    slt $8, $4, $8
+    beq $8, $0, else
     nop
     nop
-    addi $v0, $0, 1
+    addi $7, $0, 1
     addi $sp, $sp, 8
     jr $ra
     nop
     nop
 
 else:
-    addi $a0, $a0, -1
+    addi $4, $4, -1
     jal factorial
     nop
     nop
     lw $ra, 0($sp)
-    lw $a0, 4($sp)
+    lw $4, 4($sp)
     addi $sp, $sp, 8
-    multu $a0, $v0
-    mflo $v0
+    multu $4, $7
+    mflo $7
     jr $ra
     nop
     nop
