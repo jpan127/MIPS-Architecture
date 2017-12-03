@@ -218,3 +218,84 @@ module sl2
 endmodule
 
 */
+
+// 
+//  Multiplier Components
+//  Ryan Hennings
+//
+
+module multiplier_stage1 #(parameter WIDTH=32) (
+    input  [WIDTH-1:0] a, b,
+    output [WIDTH-1:0] outA, outB
+    );
+
+    wire [3:0] pp0, pp1, pp2, pp3;      // 4-bit partial product
+    wire [7:0] pad0, pad1, pad2, pad3;  // 8-bit padded pp
+    wire [7:0] sum0, sum1;              // pp padded sums
+    wire       carry0, carry1, carry2;  // CLA carry bits
+    wire       dummy0, dummy2;          // CLA carry out (unused)
+
+    paritial_product partial_prod(
+        .a(a),
+        .b(b),
+        .pp0(pp0),
+        .pp1(pp1),
+        .pp2(pp2),
+        .pp3(pp3),
+        );
+
+    assign pad0 = {4'b0000, pp0} << 2'b00;
+    assign pad1 = {4'b0000, pp1} << 2'b01;
+    assign pad2 = {4'b0000, pp2} << 2'b10;
+    assign pad3 = {4'b0000, pp3} << 2'b11;
+
+    // SUM the partial products PP0+PP1=outA (Input of stage regs)
+    cla_gen cla0( 
+        .A(pad0[3:0]), 
+        .B(pad1[3:0]), 
+        .c_in(1'b0), 
+        .Sum(outA[3:0]), 
+        .c_out(carry0));
+    cla_gen cla1(
+        .A(pad0[7:4]), 
+        .B(pad1[7:4]), 
+        .c_in(carry0), 
+        .Sum(outA[7:4]), 
+        .c_out(dummy0));
+    // ADD the partial products PP2+PP4=outB
+    cla_gen cla2( 
+        .A(pad2[3:0]), 
+        .B(pad3[3:0]), 
+        .c_in(1'b0), 
+        .Sum(outB[3:0]), 
+        .c_out(carry1));
+    cla_gen cla3(
+        .A(pad2[7:4]), 
+        .B(pad3[7:4]), 
+        .c_in(carry1), 
+        .Sum(outB[7:4]), 
+        .c_out(dummy2));
+endmodule
+
+module multiplier_stage2 #(parameter WIDTH=32) (
+    input  [WIDTH-1:0] sumA, sumB, 
+    output [WIDTH-1:0] hi, lo
+    );
+    
+    wire carry_out;  // Carry out of CLA4 -> Carry in CLA5
+    wire dummy;      //
+    // SUM sum0+sum1=product
+    cla_gen cla4( 
+        .A(sumA[3:0]), 
+        .B(sumB[3:0]), 
+        .c_in(1'b0), 
+        .Sum(hi[3:0]), 
+        .c_out(carry_out));
+    cla_gen cla5(
+        .A(sumA[7:4]), 
+        .B(sumB[7:4]), 
+        .c_in(carry_out), 
+        .Sum(lo[7:4]), 
+        .c_out(dummy));
+
+endmodule
