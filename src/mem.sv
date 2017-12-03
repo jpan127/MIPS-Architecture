@@ -9,16 +9,16 @@
 /// Instruction Memory
 module imem 
 
-(   input   [9:0]   addr,
+(   input   [5:0]   addr,
     output  [31:0]  data   );
     
-    // 32 x 1024
-    reg [31:0] rom [1023:0];
+    // 32 x 64
+    reg [31:0] rom [63:0];
     integer    i;
 
     // Initialize
     initial begin
-        for (i=0; i<1024; i++) begin 
+        for (i=0; i<64; i++) begin 
             rom[i] = 0;
         end
         $readmemh("memfile_hazards.dat", rom);

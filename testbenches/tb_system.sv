@@ -17,30 +17,12 @@ module tb_system;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
     logic32   instruction;
-    logic32   pc;
-    logic9    dmem_addr;
-    logic32   dmem_rd;
-    logic5    rf_ra;
-    logic32   rf_rd;
 
     // Testbench variables
     logic16    counter;
 
     // DUT
     system_debug DUT(.*);
-
-    // [TASK] Log some information
-    task log;
-        begin
-            if (dmem_we) begin 
-                $display("DMEM Write Data : %d", dmem_wd);
-            end
-            $display("ALU               : %d", alu_out);
-            $display("IMEM[%d]        : %H", pc[11:2], instruction);
-            $display("DMEM[%d] Read   : %d", dmem_addr, dmem_rd);
-            $display("-------------------------------");
-        end
-    endtask
 
     // [TASK] Assert values are equal
     task assert_equal;

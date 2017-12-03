@@ -21,6 +21,9 @@ module tb_datapath;
     logic32    dmem_rd;
     logic      dmem_we, branch;
     logic32    pc, alu_out, dmem_wd;
+    // Debug bus
+    logic5  rf_ra2;
+    logic32 rf_rd2;
 
     // Testbench Variables
     localparam  logic5 ignore_rs    = 'd0,
@@ -33,12 +36,11 @@ module tb_datapath;
     integer fail_count;
     integer instructions_tested;
 
-    DebugBus debug_bus();
-
     // DUT
     datapath DUT
     (
-        .debug_bus          (debug_bus),
+        .rf_ra2             (rf_ra2),
+        .rf_rd2             (rf_rd2),
         .clock              (clock),
         .reset              (reset),
         .instruction        (instruction),

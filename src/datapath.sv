@@ -11,6 +11,9 @@ module datapath
 
 (   input           clock, reset,
     input   [31:0]  instruction,
+    // Read registers from switches
+    input   [4:0]   rf_ra2,
+    output  [31:0]  rf_rd2,
     // To / From the DMEM
     input   [31:0]  dmem_rd,
     output          dmem_we,
@@ -20,7 +23,6 @@ module datapath
     output  [31:0]  d_instruction,          // Needs to be outputted to the CU so the CU gets the delay too
     output          branch,
     // Interfaces
-    DebugBus            debug_bus,
     ControlBus.Receiver control_bus     );
 
     // Packages
@@ -172,8 +174,8 @@ module datapath
         .wa         (writeback_bus.w_rf_wa),                                        // From writeback
         .ra0        (ra0),                                                          // From decode
         .ra1        (ra1),                                                          // From decode
-        .ra2        (debug_bus.rf_ra),  
-        .rd2        (debug_bus.rf_rd), 
+        .ra2        (rf_ra2),                                                       // From switches
+        .rd2        (rf_rd2),                                                       // To 7seg
         .wd         (result),                                                       // From writeback
         .rd0        (execute_bus.d_rd0),                                            // To execute
         .rd1        (execute_bus.d_rd1)                                             // To execute
