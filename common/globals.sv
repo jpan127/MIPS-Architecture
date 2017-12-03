@@ -13,8 +13,10 @@ package global_types;
     typedef logic [4:0]  logic5;
     typedef logic [5:0]  logic6;
     typedef logic [7:0]  logic8;
+    typedef logic [8:0]  logic9;
     typedef logic [9:0]  logic10;
     typedef logic [10:0] logic11;
+    typedef logic [11:0] logic12;
     typedef logic [15:0] logic16;
     typedef logic [25:0] logic26;
     typedef logic [31:0] logic32;
@@ -22,6 +24,8 @@ package global_types;
     // Constants
     localparam logic32  ZERO32 = 'd0,
                         UNUSED = 'd0;
+
+    localparam logic32  NOOP = 32'h60000019;
 
     localparam logic5   REG_ZERO = 'd0,
                         REG_1    = 'd1,
@@ -116,7 +120,7 @@ package global_types;
         SEL_RESULT_DONT_CARE = 2'bZ,
         SEL_RESULT_RD        = 2'b00,
         SEL_RESULT_ALU_OUT   = 2'b01,
-        SEL_RESULT_PC_PLUS4  = 2'b10,
+        SEL_RESULT_PC_PLUS8  = 2'b10,
         SEL_RESULT_00        = 2'b11
     } sel_result_t;
 
@@ -126,7 +130,7 @@ package global_types;
         SEL_PC_PC_PLUS4  = 2'b00,
         SEL_PC_BRANCH    = 2'b01,
         SEL_PC_JUMP      = 2'b10,
-        SEL_PC_RESULT    = 2'b11
+        SEL_PC_JR        = 2'b11
     } sel_pc_t;
 
     typedef enum logic
@@ -136,6 +140,7 @@ package global_types;
         DMEM_WE_ENABLE      = 1'b1
     } dmem_we_t;
 
+    // Opcode for ALU decoder, not the actual ALU select signal
     typedef enum logic [1:0]
     {
         ALU_OP_DONT_CARE = 2'bZ,
@@ -147,6 +152,7 @@ package global_types;
     // ALU control signals
     typedef enum logic [3:0]
     {
+        // [TODO] Change these to be named similar to other enums
         DONT_CAREac = 4'dZ,
         ADDIac      = 4'd0,
         SUBIac      = 4'd1,
@@ -159,30 +165,14 @@ package global_types;
         DIVUac      = 4'd8,
         MFHIac      = 4'd9,
         MFLOac      = 4'd10,
-        JRac        = 4'd11
+        JRac        = 4'd11,
+        NOPac       = 4'd12
     } alu_ctrl_t;
 
     typedef enum logic [5:0]
     {
-        // OPCODE_ADD      = 6'h00,
-        // OPCODE_ADDU     = 6'h00,
-        // OPCODE_AND      = 6'h00,
-        // OPCODE_NOR      = 6'h00,
-        // OPCODE_OR       = 6'h00,
-        // OPCODE_SLTU     = 6'h00,
-        // OPCODE_SLL      = 6'h00,
-        // OPCODE_SRL      = 6'h00,
-        // OPCODE_SUB      = 6'h00,
-        // OPCODE_SUBU     = 6'h00,
-        // OPCODE_DIV      = 6'h00,
-        // OPCODE_DIVU     = 6'h00,
-        // OPCODE_MFHI     = 6'h00,
-        // OPCODE_MFLO     = 6'h00,
-        // OPCODE_MULT     = 6'h00,
-        // OPCODE_MULTU    = 6'h00,
-        // OPCODE_SRA      = 6'h00,
-        // OPCODE_SLT      = 6'h00,
-        // OPCODE_JR       = 6'h00,
+        // ADD, ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, DIV, 
+        // DIVU, MFHI, MFLO, MULT, MULTU, SRA, SLT, JR
         OPCODE_R        = 'h00,
         OPCODE_ADDI     = 'h08,
         OPCODE_ADDIU    = 'h09,
@@ -210,11 +200,12 @@ package global_types;
         FUNCT_ADDU      = 'h21,
         FUNCT_AND       = 'h24,
         FUNCT_JR        = 'h08,
+        FUNCT_NOP       = 'h00,
         FUNCT_NOR       = 'h27,
         FUNCT_OR        = 'h25,
         FUNCT_SLT       = 'h2A,
         FUNCT_SLTU      = 'h2b,
-        FUNCT_SLL       = 'h00,
+        // FUNCT_SLL       = 'h00,  // Maybe implement in the future
         FUNCT_SRL       = 'h02,
         FUNCT_SUB       = 'h22,
         FUNCT_SUBU      = 'h23,
@@ -239,54 +230,40 @@ package control_signals;
     // Control unit control struct (11 bits)
     typedef struct packed
     {
-        rf_we_t      rf_we;    
-        sel_wa_t     sel_wa;    
-        sel_alu_b_t  sel_alu_b;
-        dmem_we_t    dmem_we;  
-        sel_result_t sel_result;
-        sel_pc_t     sel_pc;    
-        alu_op_t     alu_op;    
+        rf_we_t      rf_we;         // 1 bit
+        sel_wa_t     sel_wa;        // 2 bits
+        sel_alu_b_t  sel_alu_b;     // 1 bit
+        dmem_we_t    dmem_we;       // 1 bit
+        sel_result_t sel_result;    // 2 bits
+        sel_pc_t     sel_pc;        // 2 bits
+        alu_op_t     alu_op;        // 2 bits
     } control_t;
 
     // Control unit control signals for each instruction
+    // Instructions besides ADDI using ALU_OP_ADDI are not actually adding, they just don't care
     control_t
     // I-Type
-    LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_RD,          SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
-    SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_ENABLE,  SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
-    ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_ADDI},
-    BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_BRANCH,     ALU_OP_SUBI},
-    BEQNc   = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_SUBI},
+    LWc     = '{ RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_RD,        SEL_PC_PC_PLUS4, ALU_OP_ADDI }, 
+    SWc     = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_ENABLE,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_ADDI }, 
+    ADDIc   = '{ RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_ADDI },
+    BEQc    = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_BRANCH,   ALU_OP_SUBI },
+    BEQNc   = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_SUBI },
     // J-Type
-    Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_JUMP,       ALU_OP_ADDI},
-    JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS4,    SEL_PC_JUMP,       ALU_OP_ADDI},
-    JRc     = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_RESULT,     ALU_OP_R},    
+    // sel_pc should select jump but since it is being overridden before the control unit, then selecting jump would jump twice
+    Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_ADDI },
+    JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_PC_PLUS8,  SEL_PC_PC_PLUS4, ALU_OP_ADDI },
     // R-Type
-    Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    ADDc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    ORc     = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    SLTc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    SUBc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    DIVUc   = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE,   SEL_PC_PC_PLUS4,   ALU_OP_R},
-    MFHIc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    MFLOc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,     SEL_PC_PC_PLUS4,   ALU_OP_R},
-    MULTUc  = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE,   SEL_PC_PC_PLUS4,   ALU_OP_R};
-
-    // Convert control_t into a 11-bit vector
-    function logic [10:0] decode_control(input control_t c);
-        logic [10:0] vector;
-        vector =
-        {
-            // Static cast uses parentheses
-            logic '( c.rf_we ),
-            logic '( c.sel_wa ),
-            logic '( c.sel_alu_b ),
-            logic '( c.dmem_we ),
-            logic '( c.sel_result ),
-            logic '( c.sel_pc ),
-            logic '( c.alu_op )
-        };
-        return vector;
-    endfunction
+    NOPc    = '{ RF_WE_DISABLE, SEL_WA_00,  SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_00,        SEL_PC_PC_PLUS4, ALU_OP_R    },    
+    JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_JR,       ALU_OP_R    },    
+    Rc      = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    ADDc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    ORc     = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    SLTc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    SUBc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    DIVUc   = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, ALU_OP_R    },
+    MFHIc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    MFLOc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    MULTUc  = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, ALU_OP_R    };
 
 endpackage
 

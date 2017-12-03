@@ -10,7 +10,8 @@ module control_unit
     import global_types::*;
     import control_signals::*;
 
-(   input logic6        opcode, funct,
+(   input [5:0]         opcode, funct,
+    input               branch,
     ControlBus.Sender   control_bus     );
 
     // Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
@@ -30,7 +31,7 @@ module control_unit
         control_bus.dmem_we,        // 1 bit
         control_bus.sel_result,     // 2 bits
         control_bus.sel_pc,         // 2 bits
-        alu_op                              // 2 bits
+        alu_op                      // 2 bits
     } = ctrl;
 
     // Decodes opcode to set ctrl signals
@@ -39,7 +40,7 @@ module control_unit
             // I-TYPE
             OPCODE_LW:       ctrl = LWc;
             OPCODE_SW:       ctrl = SWc;
-            OPCODE_BEQ:      ctrl = (control_bus.zero) ? BEQc : BEQNc;
+            OPCODE_BEQ:      ctrl = (branch) ? BEQc : BEQNc;
             OPCODE_ADDI:     ctrl = ADDIc;
             // J-TYPE
             OPCODE_J:        ctrl = Jc;
@@ -67,15 +68,16 @@ module control_unit
             default: 
                 case (funct)
                     FUNCT_ADD:   control_bus.alu_ctrl = ADDac;
-                    FUNCT_SUB:   control_bus.alu_ctrl = SUBac;
                     FUNCT_AND:   control_bus.alu_ctrl = ANDac;
-                    FUNCT_OR:    control_bus.alu_ctrl = ORac;
-                    FUNCT_SLT:   control_bus.alu_ctrl = SLTac;
-                    FUNCT_MULTU: control_bus.alu_ctrl = MULTUac;
                     FUNCT_DIVU:  control_bus.alu_ctrl = DIVUac;
+                    FUNCT_JR:    control_bus.alu_ctrl = JRac;
                     FUNCT_MFHI:  control_bus.alu_ctrl = MFHIac;
                     FUNCT_MFLO:  control_bus.alu_ctrl = MFLOac;
-                    FUNCT_JR:    control_bus.alu_ctrl = JRac;
+                    FUNCT_MULTU: control_bus.alu_ctrl = MULTUac;
+                    FUNCT_NOP:   control_bus.alu_ctrl = NOPac;
+                    FUNCT_OR:    control_bus.alu_ctrl = ORac;
+                    FUNCT_SLT:   control_bus.alu_ctrl = SLTac;
+                    FUNCT_SUB:   control_bus.alu_ctrl = SUBac;
                     default:     control_bus.alu_ctrl = DONT_CAREac;
                 endcase
         endcase

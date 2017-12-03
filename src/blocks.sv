@@ -21,10 +21,8 @@ module regfile
     input           we,
     input   [4:0]   wa, ra0, ra1,
     input   [31:0]  wd,
-`ifdef VALIDATION
     input   [4:0]   ra2,
     output  [31:0]  rd2,
-`endif
     output  [31:0]  rd0, rd1        );
 
     import global_types::*;
@@ -41,16 +39,14 @@ module regfile
     end
 
     // Clock triggered write operation
-    always_ff @ (posedge clock) begin
-        if (we) rf[wa] <= wd;
+    always_ff @ (negedge clock) begin
+        if (we && wa != 0) rf[wa] <= wd;
     end
 
     // Combinational read operation
     assign rd0 = (ra0 == 0) ? 0 : rf[ra0];
     assign rd1 = (ra1 == 0) ? 0 : rf[ra1];
-`ifdef VALIDATION
     assign rd2 = (ra2 == 0) ? 0 : rf[ra2];
-`endif
 
 endmodule
 
@@ -111,6 +107,26 @@ module mux4 #(parameter WIDTH=32)
     
 endmodule
 
+module mux8 #(parameter WIDTH=32)
+
+(   input       [WIDTH-1:0]     a, b, c, d, e, f, g, h,
+    input       [2:0]           sel,
+    output reg  [WIDTH-1:0]     y                       );
+
+    always_comb begin
+        case(sel)
+            3'b000: y = a;
+            3'b001: y = b;
+            3'b010: y = c;
+            3'b011: y = d;
+            3'b100: y = e;
+            3'b101: y = f;
+            3'b110: y = g;
+            3'b111: y = h;
+        endcase
+    end
+    
+endmodule
 
 module alu
 
@@ -154,12 +170,13 @@ module alu
             4'd3:    y = a - b;                     // SUB
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
-            4'd6:    y = (a < b);                   // SLT
+            4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky
             4'd7:    { d_hi, d_lo } = a * b;        // MULT
             4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
             4'd9:    y = q_hi;                      // MFHI
             4'd10:   y = q_lo;                      // MFLO
             4'd11:   y = a;                         // JR, pass through a
+            4'd12:   y = a;                         // Pass through
             default: y = 32'dZ;                     // UNDEFINED
         endcase
     end

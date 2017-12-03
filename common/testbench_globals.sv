@@ -25,51 +25,37 @@ package testbench_globals;
     // Testbench control struct
     typedef struct packed
     {
-        rf_we_t      rf_we;    
-        sel_wa_t     sel_wa;    
+        rf_we_t      rf_we;
+        sel_wa_t     sel_wa;
         sel_alu_b_t  sel_alu_b;
         sel_result_t sel_result;
-        sel_pc_t     sel_pc;    
-        alu_ctrl_t   alu_ctrl;    
+        sel_pc_t     sel_pc;
+        alu_ctrl_t   alu_ctrl;
     } testbench_control_t;
-
-    // Converts testbench_control_t into a 12-bit vector
-    function logic [11:0] decode_testbench_ctrl(input testbench_control_t c);
-        logic [11:0] vector;
-        vector =
-        {
-            logic '(c.rf_we),
-            logic '(c.sel_wa),
-            logic '(c.sel_alu_b),
-            logic '(c.sel_result),
-            logic '(c.sel_pc),
-            logic '(c.alu_ctrl)
-        };
-        return vector;
-    endfunction
 
     // All the controls to test
     testbench_control_t
     // I-Type
-    TB_LWc     = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_RD,         SEL_PC_PC_PLUS4, ADDac},
-    TB_SWc     = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDac},
-    TB_ADDIc   = '{RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDIac},
-    TB_BEQc    = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_BRANCH,   SUBac},
+    TB_LWc     = '{ RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_RD,        SEL_PC_PC_PLUS4, ADDac       },
+    TB_SWc     = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ADDac       },
+    TB_ADDIc   = '{ RF_WE_ENABLE,  SEL_WA_WA0, SEL_ALU_B_SIGN_IMM, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ADDIac      },
+    TB_BEQc    = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_BRANCH,   SUBac       },
+    TB_BEQNc   = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, SUBac       },
     // J-Type
-    TB_Jc      = '{RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_JUMP,     DONT_CAREac},
-    TB_JALc    = '{RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  SEL_RESULT_PC_PLUS4,   SEL_PC_JUMP,     DONT_CAREac},
+    TB_Jc      = '{ RF_WE_DISABLE, SEL_WA_WA0, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_JUMP,     DONT_CAREac },
+    TB_JALc    = '{ RF_WE_ENABLE,  SEL_WA_31,  SEL_ALU_B_DMEM_WD,  SEL_RESULT_PC_PLUS8,  SEL_PC_JUMP,     DONT_CAREac },
     // R-Type
-    TB_JRc     = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_RESULT,   JRac},
-    TB_Rc      = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, DONT_CAREac},
-    TB_ADDc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ADDac},
-    TB_ANDc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ANDac},
-    TB_ORc     = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, ORac},
-    TB_SLTc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SLTac},
-    TB_SUBc    = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, SUBac},
-    TB_DIVUc   = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE,  SEL_PC_PC_PLUS4, DIVUac},
-    TB_MFHIc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, MFHIac},
-    TB_MFLOc   = '{RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,    SEL_PC_PC_PLUS4, MFLOac},
-    TB_MULTUc  = '{RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE,  SEL_PC_PC_PLUS4, MULTUac};
+    TB_JRc     = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_JR,       JRac        },
+    TB_Rc      = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, DONT_CAREac },
+    TB_ADDc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ADDac       },
+    TB_ANDc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ANDac       },
+    TB_ORc     = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ORac        },
+    TB_SLTc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, SLTac       },
+    TB_SUBc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, SUBac       },
+    TB_DIVUc   = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, DIVUac      },
+    TB_MFHIc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, MFHIac      },
+    TB_MFLOc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, MFLOac      },
+    TB_MULTUc  = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, MULTUac     };
 
 endpackage
 

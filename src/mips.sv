@@ -9,14 +9,11 @@
 /// Just the CPU
 module mips 
 
-(   input           clock, reset,
-    input   [31:0]  instruction, dmem_rd,
-`ifdef VALIDATION
-    DebugBus.InputBus  debug_in,
-    DebugBus.OutputBus debug_out,
-`endif
-    output          dmem_we,
-    output  [31:0]  pc, alu_out, dmem_wd    );
+(   input          clock, reset,
+    input   [31:0] instruction, dmem_rd,
+    DebugBus       debug_bus,
+    output         dmem_we,
+    output  [31:0] pc, alu_out, dmem_wd    );
 
     // Packages
     import global_types::*;
@@ -27,18 +24,21 @@ module mips
     logic         zero, sel_alu_b, rf_we;
     logic [1:0]   sel_pc, sel_result, sel_wa;
 
+    // Decode
+    logic32       d_instruction;
+
     // Internal bus between control unit and datapath
     ControlBus control_bus();
 
     // Wiring
-    assign opcode  = instruction[31:26];
-    assign funct   = instruction[5:0];
-    assign dmem_we = control_bus.dmem_we;
+    assign opcode  = d_instruction[31:26];
+    assign funct   = d_instruction[5:0];
 
     control_unit CU 
     (
         .opcode         (opcode),
         .funct          (funct),
+        .branch         (branch),
         .control_bus    (control_bus.Sender)
     );
 
@@ -48,13 +48,13 @@ module mips
         .reset          (reset),
         .instruction    (instruction),
         .dmem_rd        (dmem_rd),
+        .dmem_we        (dmem_we),
         .pc             (pc),
         .alu_out        (alu_out),
         .dmem_wd        (dmem_wd),
-`ifdef VALIDATION
-        .debug_in       (debug_in),
-        .debug_out      (debug_out),
-`endif
+        .d_instruction  (d_instruction),
+        .branch         (branch),
+        .debug_bus      (debug_bus),
         .control_bus    (control_bus.Receiver)
     );
 
@@ -139,8 +139,7 @@ module system
 
     mips MIPS 
     (
-        .debug_in       (debug_bus.InputBus),
-        .debug_out      (debug_bus.OutputBus),
+        .debug_bus      (debug_bus),
         .clock          (db_button), 
         .reset          (reset), 
         .pc             (pc), 
@@ -175,54 +174,48 @@ module system_debug
     output [31:0] dmem_wd, alu_out,
     output        dmem_we,
     // Validation outputs
-`ifdef VALIDATION
     input  [4:0]  rf_ra,
     output [31:0] rf_rd,
-`endif
     // Extra debug outputs
     output [31:0] instruction,
     output [31:0] pc,
-    output [9:0]  dmem_addr,
+    output [8:0]  dmem_addr,
     output [31:0] dmem_rd            );
 
-    assign dmem_addr = alu_out[9:0];
+    // Divide by 4
+    assign dmem_addr = alu_out[8:0]; // >> 2;
 
-`ifdef VALIDATION
     // Debug bus
     DebugBus debug_bus();
     assign debug_bus.rf_ra = rf_ra;
     assign rf_rd = debug_bus.rf_rd;
-`endif
 
     mips MIPS 
     (
-`ifdef VALIDATION
-        .debug_in       (debug_bus.InputBus),
-        .debug_out      (debug_bus.OutputBus),
-`endif
-        .clock          (clock), 
-        .reset          (reset), 
-        .pc             (pc), 
-        .instruction    (instruction), 
-        .dmem_we        (dmem_we), 
-        .alu_out        (alu_out), 
-        .dmem_wd        (dmem_wd), 
-        .dmem_rd        (dmem_rd)
+        .debug_bus   (debug_bus),
+        .clock       (clock), 
+        .reset       (reset), 
+        .pc          (pc), 
+        .instruction (instruction), 
+        .dmem_we     (dmem_we), 
+        .alu_out     (alu_out), 
+        .dmem_wd     (dmem_wd), 
+        .dmem_rd     (dmem_rd)
     );
 
     imem IMEM 
     ( 
-        .addr           (pc[11:2]),        // 10 bits for 1024 spots
-        .data           (instruction) 
+        .addr        (pc[11:2]),        // 10 bits for 1024 spots
+        .data        (instruction) 
     );
     
     dmem DMEM 
     ( 
-        .clock          (clock), 
-        .we             (dmem_we), 
-        .addr           (alu_out[9:0]), 
-        .wd             (dmem_wd), 
-        .rd             (dmem_rd) 
+        .clock       (clock), 
+        .we          (dmem_we), 
+        .addr        (dmem_addr), 
+        .wd          (dmem_wd), 
+        .rd          (dmem_rd) 
     );
 
 endmodule
