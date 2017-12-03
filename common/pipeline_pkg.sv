@@ -32,6 +32,7 @@ package pipeline_pkg;
         // Inputs
         logic32       d_rd0;
         logic32       d_rd1;
+        logic5        d_rs;
         logic5        d_wa0;
         logic5        d_wa1;
         logic32       d_sign_imm;
@@ -39,6 +40,7 @@ package pipeline_pkg;
         // Outputs
         logic32       e_rd0;
         logic32       e_rd1;
+        logic5        e_rs;
         logic5        e_wa0;
         logic5        e_wa1;
         logic32       e_sign_imm;

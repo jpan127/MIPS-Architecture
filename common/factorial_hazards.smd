@@ -1,0 +1,40 @@
+# Currently the output is correct somehow??
+main:
+    addi $4, $0, 4
+    jal  factorial
+    nop
+    nop
+    add $6, $7, $0
+    j end
+
+factorial:
+    addi $sp, $sp, -8
+    sw $4, 4($sp) # This needs forward from <result : $4=4> but is not getting it which messes everything up
+    sw $ra, 0($sp)
+    addi $8, $0, 2
+    slt $8, $4, $8
+    beq $8, $0, else
+    nop
+    nop
+    addi $7, $0, 1
+    addi $sp, $sp, 8
+    jr $ra
+    nop
+    nop
+
+else:
+    addi $4, $4, -1
+    jal factorial
+    nop
+    nop
+    lw $ra, 0($sp)
+    lw $4, 4($sp)
+    addi $sp, $sp, 8
+    multu $4, $7
+    mflo $7
+    jr $ra
+    nop
+    nop
+
+end:
+    j end
