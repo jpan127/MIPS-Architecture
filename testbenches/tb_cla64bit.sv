@@ -21,27 +21,27 @@ initial begin
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
     a = 1; b = 0; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 0; b = 9223372036854775807; #2; 
+    a = 0; b = 18446744073709551616; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775807; b = 0; #2; 
+    a = 18446744073709551616; b = 0; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 1; b = 9223372036854775807; #2; 
+    a = 1; b = 18446744073709551616; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775807; b = 1; #2; 
+    a = 18446744073709551616; b = 1; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775806; b = 9223372036854775806; #2; 
+    a = 18446744073709551615; b = 18446744073709551615; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775806; b = 9223372036854775807; #2; 
+    a = 18446744073709551616; b = 18446744073709551615; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775807; b = 9223372036854775806; #2; 
+    a = 18446744073709551615; b = 18446744073709551616; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
-    a = 9223372036854775807; b = 9223372036854775807; #2; 
+    a = 18446744073709551616; b = 18446744073709551616; #2; 
     if (sum != a+b) $display ("ERROR: a = %d b = %d OUT = %d", a, b, sum);
 
     // Random Values
     for (i=0; i<1000; i=i+1) begin        
-        a=$urandom % 9223372036854775807; 
-        b=$urandom % 9223372036854775807;
+        a=$urandom % 18446744073709551616; 
+        b=$urandom % 18446744073709551616;
         #2; 
         // $display ("a = %d b = %d OUT = %d", a, b, sum);
         if (sum != a+b) begin
