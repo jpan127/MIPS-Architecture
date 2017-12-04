@@ -37,7 +37,7 @@ module soc
 
     // Factorial / SoC
     logic   dmem_we_req;
-    logic32 factorial_rd, gpio_rd, rd;
+    logic32 factorial_rd, gpio_rd, rd, dmem_rd;
     logic2  sel_rd;
     logic   we_factorial, we_gpio;
     logic32 gpio_out1, gpio_out2;
@@ -53,7 +53,7 @@ module soc
         .dmem_we     (dmem_we_req),     // MIPS sets dmem_we_req which gets decoded into dmem_we
         .alu_out     (alu_out),
         .dmem_wd     (dmem_wd),
-        .dmem_rd     (dmem_rd)
+        .dmem_rd     (rd)               // From SOC_MUX
     );
 
     imem IMEM 
@@ -68,13 +68,13 @@ module soc
         .we          (dmem_we), 
         .addr        (alu_out[11:0]), 
         .wd          (dmem_wd), 
-        .rd          (dmem_rd) 
+        .rd          (dmem_rd)          // To SOC_MUX
     );
 
     address_decoder ADDRESS_DECODER
     (
         .dmem_we_req (dmem_we_req),     // Input
-        .address     (address),         // Input
+        .address     (alu_out),         // Input
         .we1         (we_factorial),    // Output
         .we2         (we_gpio),         // Output
         .dmem_we     (dmem_we),         // Output
@@ -112,7 +112,7 @@ module soc
         .c           (factorial_rd),
         .d           (gpio_rd),
         .sel         (sel_rd),
-        .y           (rd)
+        .y           (rd)               // Final read data
     );
 
     mux2 #(16) GPIO_OUT_MUX

@@ -166,7 +166,9 @@ package global_types;
         MFHIac      = 4'd9,
         MFLOac      = 4'd10,
         JRac        = 4'd11,
-        NOPac       = 4'd12
+        NOPac       = 4'd12,
+        SLLac       = 4'd13,
+        SRLac       = 4'd14
     } alu_ctrl_t;
 
     typedef enum logic [5:0]

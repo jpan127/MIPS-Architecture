@@ -170,13 +170,15 @@ module alu
             4'd3:    y = a - b;                     // SUB
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
-            4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky
+            4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky (dont look at instruction)
             4'd7:    { d_hi, d_lo } = a * b;        // MULT
             4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
             4'd9:    y = q_hi;                      // MFHI
             4'd10:   y = q_lo;                      // MFLO
             4'd11:   y = a;                         // JR, pass through a
             4'd12:   y = a;                         // Pass through
+            4'd13:   y = a << b;                    // SLL
+            4'd14:   y = a >> b;                    // SRL
             default: y = 32'dZ;                     // UNDEFINED
         endcase
     end
@@ -185,36 +187,3 @@ module alu
     assign zero = (y == 0);
 
 endmodule
-
-/*
-
-module sign_extend
-
-(   input  [15:0]   a,
-    output [31:0]   y    );
-
-    assign y = { {16{a[15]}}, a };
-    
-endmodule
-
-
-module adder
-
-(   input  [31:0]   a, b,
-    output [31:0]   y       );
-
-    assign y = a + b;
-    
-endmodule
-
-
-module sl2
-
-(   input  [31:0]   a,
-    output [31:0]   y   );
-
-    assign y = {a[29:0], 2'b00};
-    
-endmodule
-
-*/

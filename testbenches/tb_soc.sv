@@ -42,7 +42,8 @@ module tb_soc;
     // Initial state
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
-        clock = 0;
+        clock    = 0;
+        gpio_in1 = 0;
         `reset_system
     end
 
