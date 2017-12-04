@@ -7,22 +7,24 @@
 // Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
-module tb_system;
+module tb_soc;
 
     // Packages
     import global_types::*;
 
     // DUT ports
     logic     clock, reset;      // Inputs
+    logic5    gpio_in1;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
-    logic32   instruction;
+    logic32   instruction, pc;
+    logic16   gpio_out;
 
     // Testbench variables
     logic16    counter;
 
     // DUT
-    system_debug DUT(.*);
+    soc DUT(.*);
 
     // [TASK] Assert values are equal
     task assert_equal;

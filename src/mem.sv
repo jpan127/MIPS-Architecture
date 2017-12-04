@@ -37,13 +37,13 @@ module dmem
     input   [31:0]  wd,
     output  [31:0]  rd          );
     
-    // 32 x 512
-    reg [31:0] ram [511:0];
+    // 32 x 4096
+    reg [31:0] ram [4095:0];
     integer i;
     
     // Initialize to 0
     initial begin
-        for (i=0; i<512; i=i+1) begin
+        for (i=0; i<4096; i=i+1) begin
             ram[i] = 32'b0;
         end
     end

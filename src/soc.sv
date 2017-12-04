@@ -25,11 +25,11 @@ module soc
     input  [4:0]  gpio_in1,
     output [31:0] dmem_wd, alu_out,
     output        dmem_we,
-    output [31:0] instruction,
+    output [31:0] instruction, pc,
     output [15:0] gpio_out );
 
     // Packages
-    import global_types::logic32, logic2, logic5, logic16;
+    import global_types::*;
 
     // Debug bus
     logic5  rf_ra2;
@@ -50,7 +50,7 @@ module soc
         .reset       (reset),
         .pc          (pc),
         .instruction (instruction),
-        .dmem_we     (dmem_we_req), // MIPS sets dmem_we_req which gets decoded into dmem_we
+        .dmem_we     (dmem_we_req),     // MIPS sets dmem_we_req which gets decoded into dmem_we
         .alu_out     (alu_out),
         .dmem_wd     (dmem_wd),
         .dmem_rd     (dmem_rd)
@@ -66,7 +66,7 @@ module soc
     ( 
         .clock       (clock), 
         .we          (dmem_we), 
-        .addr        (alu_out[8:0]), 
+        .addr        (alu_out[11:0]), 
         .wd          (dmem_wd), 
         .rd          (dmem_rd) 
     );
@@ -121,6 +121,6 @@ module soc
         .b           (gpio_out2[31:16]),
         .sel         (gpio_out1[4]),
         .y           (gpio_out)
-    )
+    );
 
 endmodule
