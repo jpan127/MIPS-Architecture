@@ -41,29 +41,63 @@ module cla_16bit (
 
     wire carry4, carry8, carry12;
 
-    cla_4bit cla_4(
+    cla_4bit cla4_4(
         .A(A[3:0]),
         .B(B[3:0]),
         .c_in(c_in),
         .Sum(Sum[3:0]),
         .c_out(carry4));
-    cla_4bit cla_8(
+    cla_4bit cla4_8(
         .A(A[7:4]),
         .B(B[7:4]),
         .c_in(carry4),
         .Sum(Sum[7:4]),
         .c_out(carry8));
-    cla_4bit cla_12(
+    cla_4bit cla4_12(
         .A(A[11:8]),
         .B(B[11:8]),
         .c_in(carry8),
         .Sum(Sum[11:8]),
         .c_out(carry12));
-    cla_4bit cla_16(
+    cla_4bit cla4_16(
         .A(A[15:12]),
         .B(B[15:12]),
         .c_in(carry12),
         .Sum(Sum[15:12]),
+        .c_out(c_out));
+endmodule
+
+module cla_64bit (
+    input  [63:0]  A, B,
+    input         c_in,  // PLCU, GLCU,
+    output        c_out, 
+    output [64:0] Sum);
+
+    wire carry16, carry32, carry48;
+
+    cla_16bit cla16_16(
+        .A(A[15:0]),
+        .B(B[15:0]),
+        .c_in(c_in),
+        .Sum(Sum[15:0]),
+        .c_out(carry16));
+    cla_16bit cla16_32(
+        .A(A[31:16]),
+        .B(B[31:16]),
+        .c_in(carry16),
+        .Sum(Sum[31:16]),
+        .c_out(carry32));
+    cla_16bit cla16_48(
+        .A(A[47:32]),
+        .B(B[47:32]),
+        .c_in(carry32),
+        .Sum(Sum[47:32]),
+        .c_out(carry48));
+    cla_16bit cla16_64(
+        .A(A[63:48]),
+        .B(B[63:48]),
+        .c_in(carry48),
+        .Sum(Sum[63:48]),
         .c_out(c_out));
 endmodule
 
