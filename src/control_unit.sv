@@ -77,6 +77,7 @@ module control_unit
                     FUNCT_NOP:   control_bus.alu_ctrl = NOPac;
                     FUNCT_OR:    control_bus.alu_ctrl = ORac;
                     FUNCT_SLT:   control_bus.alu_ctrl = SLTac;
+                    FUNCT_SRL:   control_bus.alu_ctrl = SRLac;
                     FUNCT_SUB:   control_bus.alu_ctrl = SUBac;
                     default:     control_bus.alu_ctrl = DONT_CAREac;
                 endcase

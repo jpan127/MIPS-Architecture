@@ -39,10 +39,10 @@ module gpio_decoder(input we, input[1:0] addr, output reg we1, we2, output[1:0] 
     
     always_comb begin
         case(addr)
-            2'b00:begin { we1, we2 } = 2'b00;
-            2'b01:begin { we1, we2 } = 2'b00;
-            2'b10:begin { we1, we2 } = { we, 1'b0 };
-            2'b11:begin { we1, we2 } = { 1'b0, we };
+            2'b00: { we1, we2 } = 2'b00;
+            2'b01: { we1, we2 } = 2'b00;
+            2'b10: { we1, we2 } = { we, 1'b0 };
+            2'b11: { we1, we2 } = { 1'b0, we };
         endcase
     end  
     
