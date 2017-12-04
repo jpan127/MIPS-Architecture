@@ -1,6 +1,6 @@
 module cla_generator(
-    input [3:0] G, P,
-    input c_in,
+    input  [3:0] G, P,
+    input        c_in,
     output [4:0] C);
     
     assign C[0] = c_in;
@@ -28,13 +28,13 @@ module cla_4bit(
         .c_in(c_in),
         .C(C));
 
-    assign Sum = C[3:0] ^ P;
+    assign Sum    = C[3:0] ^ P;
     assign c_out  = C[4];
 endmodule
 
 
 module cla_16bit (
-    input  [15:0]  A, B,
+    input  [15:0] A, B,
     input         c_in,  // PG, GG,
     output        c_out, //PLCU, GLCU,
     output [15:0] Sum);
@@ -42,65 +42,123 @@ module cla_16bit (
     wire carry4, carry8, carry12;
 
     cla_4bit cla4_4(
-        .A(A[3:0]),
-        .B(B[3:0]),
-        .c_in(c_in),
-        .Sum(Sum[3:0]),
-        .c_out(carry4));
+        .A(A[3:0]), .B(B[3:0]),     .c_in(c_in),
+        .Sum(Sum[3:0]),             .c_out(carry4));
     cla_4bit cla4_8(
-        .A(A[7:4]),
-        .B(B[7:4]),
-        .c_in(carry4),
-        .Sum(Sum[7:4]),
-        .c_out(carry8));
+        .A(A[7:4]), .B(B[7:4]),     .c_in(carry4),
+        .Sum(Sum[7:4]),             .c_out(carry8));
     cla_4bit cla4_12(
-        .A(A[11:8]),
-        .B(B[11:8]),
-        .c_in(carry8),
-        .Sum(Sum[11:8]),
-        .c_out(carry12));
+        .A(A[11:8]), .B(B[11:8]),   .c_in(carry8),
+        .Sum(Sum[11:8]),            .c_out(carry12));
     cla_4bit cla4_16(
-        .A(A[15:12]),
-        .B(B[15:12]),
-        .c_in(carry12),
-        .Sum(Sum[15:12]),
-        .c_out(c_out));
+        .A(A[15:12]), .B(B[15:12]), .c_in(carry12),
+        .Sum(Sum[15:12]),           .c_out(c_out));
 endmodule
 
 module cla_64bit (
-    input  [63:0]  A, B,
+    input  [63:0] A, B,
     input         c_in,  // PLCU, GLCU,
     output        c_out, 
-    output [64:0] Sum);
+    output [63:0] Sum);
 
     wire carry16, carry32, carry48;
 
     cla_16bit cla16_16(
-        .A(A[15:0]),
-        .B(B[15:0]),
-        .c_in(c_in),
-        .Sum(Sum[15:0]),
-        .c_out(carry16));
+        .A(A[15:0]), .B(B[15:0]),   .c_in(c_in),
+        .Sum(Sum[15:0]),            .c_out(carry16));
     cla_16bit cla16_32(
-        .A(A[31:16]),
-        .B(B[31:16]),
-        .c_in(carry16),
-        .Sum(Sum[31:16]),
-        .c_out(carry32));
+        .A(A[31:16]), .B(B[31:16]), .c_in(carry16),
+        .Sum(Sum[31:16]),           .c_out(carry32));
     cla_16bit cla16_48(
-        .A(A[47:32]),
-        .B(B[47:32]),
-        .c_in(carry32),
-        .Sum(Sum[47:32]),
-        .c_out(carry48));
+        .A(A[47:32]), .B(B[47:32]), .c_in(carry32),
+        .Sum(Sum[47:32]),           .c_out(carry48));
     cla_16bit cla16_64(
-        .A(A[63:48]),
-        .B(B[63:48]),
-        .c_in(carry48),
-        .Sum(Sum[63:48]),
-        .c_out(c_out));
+        .A(A[63:48]), .B(B[63:48]), .c_in(carry48),
+        .Sum(Sum[63:48]),           .c_out(c_out));
 endmodule
 
+module multiplier32bit_single_stage (
+    input  [31:0] A, B,
+    output [63:0] product);
+    
+    // 32-bit Partial Products
+    wire [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 
+                pp8,  pp9,  pp10, pp11, pp12, pp13, pp14, pp15,
+                pp16, pp17, pp18, pp19, pp20, pp21, pp22, pp23, 
+                pp24, pp25, pp26, pp27, pp28, pp29, pp30, pp31;
+
+    // 64-bit Padded Partial Products
+    wire [63:0] pad0,  pad1,  pad2,  pad3,  pad4,  pad5,  pad6,  pad7, 
+                pad8,  pad9,  pad10, pad11, pad12, pad13, pad14, pad15,
+                pad16, pad17, pad18, pad19, pad20, pad21, pad22, pad23, 
+                pad24, pad25, pad26, pad27, pad28, pad29, pad30, pad31;
+        
+    // Padded Partial Product Sums
+    // 0th Level Sums
+    wire [63:0] sumL0_0, sumL0_1, sumL0_2,  sumL0_3,  sumL0_4,  sumL0_5,  sumL0_6,  sumL0_7,
+                sumL0_8, sumL0_9, sumL0_10, sumL0_11, sumL0_12, sumL0_13, sumL0_14, sumL0_15,
+    // 1st Level Sums
+    wire [63:0] sumL1_0, sumL1_1, sumL1_2,  sumL1_3,  sumL1_4,  sumL1_5,  sumL1_6,  sumL1_7;
+    // 2nd Level Sums
+    wire [63:0] sumL2_0, sumL2_1, sumL2_2, sumL2_3;
+    // 3rd Level Sums
+    wire [63:0] sumL3_0, sumL3_1; 
+    // 4th Level Sum
+    wire [63:0] sumL4_0; // Product
+
+
+    // CLA Carry Bits
+    wire carry0, carry1, carry2, carry3, carry4, carry5;
+
+    // Calculate Partial Products
+
+endmodule
+
+module partial_product (
+    input  [31:0] A, B,   
+    output [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 
+                  pp8,  pp9,  pp10, pp11, pp12, pp13, pp14, pp15,
+                  pp16, pp17, pp18, pp19, pp20, pp21, pp22, pp23, 
+                  pp24, pp25, pp26, pp27, pp28, pp29, pp30, pp31);
+
+    integer i;
+    always @(*) begin
+        for (i = 0; i < 15; i = i+1) begin
+            assign pp0[i]   = a[i]  & b[0];
+            assign pp1[i]   = a[i]  & b[1];
+            assign pp2[i]   = a[i]  & b[2];
+            assign pp3[i]   = a[i]  & b[3];
+            assign pp4[i]   = a[i]  & b[4];
+            assign pp5[i]   = a[i]  & b[5];
+            assign pp6[i]   = a[i]  & b[6];
+            assign pp7[i]   = a[i]  & b[7];
+            assign pp8[i]   = a[i]  & b[8];
+            assign pp9[i]   = a[i]  & b[9];
+            assign pp10[i]  = a[i]  & b[10];
+            assign pp11[i]  = a[i]  & b[11];
+            assign pp12[i]  = a[i]  & b[12];
+            assign pp13[i]  = a[i]  & b[13];
+            assign pp14[i]  = a[i]  & b[14];
+            assign pp15[i]  = a[i]  & b[15];
+            assign pp16[i]  = a[i]  & b[16];
+            assign pp17[i]  = a[i]  & b[17];
+            assign pp18[i]  = a[i]  & b[18];
+            assign pp19[i]  = a[i]  & b[19];
+            assign pp20[i]  = a[i]  & b[20];
+            assign pp21[i]  = a[i]  & b[21];
+            assign pp22[i]  = a[i]  & b[22];
+            assign pp23[i]  = a[i]  & b[23];
+            assign pp24[i]  = a[i]  & b[24];
+            assign pp25[i]  = a[i]  & b[25];
+            assign pp26[i]  = a[i]  & b[26];
+            assign pp27[i]  = a[i]  & b[27];
+            assign pp28[i]  = a[i]  & b[28];
+            assign pp29[i]  = a[i]  & b[29];
+            assign pp30[i]  = a[i]  & b[30];
+            assign pp31[i]  = a[i]  & b[31];
+        end // for
+    end // always
+endmodule 
 
 
 module multiplier_stage1 #(parameter WIDTH=32) (
@@ -108,7 +166,8 @@ module multiplier_stage1 #(parameter WIDTH=32) (
     output [63:0] outA, outB
     );
 
-    wire [310] pp0, pp1, pp2, pp3, pp4, pp5, pp6, pp7, pp8, pp9, pp10, pp11, pp12, pp13, pp14, pp15;                      // 4-bit partial product
+    wire [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 
+                pp8,  pp9,  pp10, pp11, pp12, pp13, pp14, pp15;                      // 4-bit partial product
     wire [63:0] pad0, pad1, pad2, pad3, pad4, pad5, pa6, pad7, pad8, pad9, pad10, pad11, pad12, pad13, pad14, pad15;  // 8-bit padded pp
     wire [63:0] sum0, sum1, sum2, sum3, sum4, sum5, sum6, sum7;              // pp padded sums
     wire             carry0, carry1, carry2, carry3, carry4, carry5, carry6, carry7, carry8;  // CLA carry bits
@@ -218,32 +277,7 @@ module multiplier_stage2 #(parameter WIDTH=32) (
 
 endmodule
 
-module paritial_product (
-    input  [15:0] a, b,   
-    output [15:0] pp0, pp1, pp2, pp3, pp4, pp5, pp6, pp7, pp8, pp9, pp10, pp11, pp12, pp13, pp14, pp15
-    );
 
-    integer i;
-    always @(*) begin
-        for (i = 0; i < 15; i = i+1) begin
-            assign pp0[i]   = a[i]  & b[0];
-            assign pp1[i]   = a[i]  & b[1];
-            assign pp2[i]   = a[i]  & b[2];
-            assign pp3[i]   = a[i]  & b[3];
-            assign pp4[i]   = a[i]  & b[4];
-            assign pp5[i]   = a[i]  & b[5];
-            assign pp6[i]   = a[i]  & b[6];
-            assign pp7[i]   = a[i]  & b[7];
-            assign pp8[i]   = a[i]  & b[8];
-            assign pp9[i]   = a[i]  & b[9];
-            assign pp10[i]  = a[i]  & b[10];
-            assign pp11[i]  = a[i]  & b[11];
-            assign pp12[i]  = a[i]  & b[12];
-            assign pp13[i]  = a[i]  & b[13];
-            assign pp14[i]  = a[i]  & b[14];
-            assign pp15[i]  = a[i]  & b[15];
-        end // for
-    end // always
 
 
 //     pp0[0]   = a[0]  & b[0];
@@ -500,4 +534,3 @@ module paritial_product (
 //     pp13[15]  = a[15]  & b[13];
 //     pp14[15]  = a[15]  & b[14];
 //     pp15[15]  = a[15]  & b[15];
-endmodule 
