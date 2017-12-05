@@ -23,71 +23,94 @@ task reset; begin
     rst = 1; #5; rst = 0; #5; end
 endtask
 
-reg [63:0] actual;
+reg [63:0] actual; // Store actual Product to compare
+integer i;         // Loop variable for random values
 
 initial begin
   reset;                              
   $display("---Simulation Begining---");
-    // Edge Cases
-    a = 0; b = 0; actual = a*b;
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+
+  // Edge Case Verification
+  a = 0; b = 0; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 0; b = 1; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock; 
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);    
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 1; b = 0; #2; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);   
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 0; b = 32'hffffffff; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 32'hffffffff; b = 0; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 1; b = 32'hffffffff; actual = a*b; 
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 32'hffffffff; b = 1; actual = a*b; 
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 32'hfffffffe; b = 32'hfffffffe; actual = a*b;
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 32'hfffffffe; b = 32'hffffffff; actual = a*b; 
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+  inputEn = 0; stageEn = 0; outputEn = 0;
+
+  a = 32'hffffffff; b = 32'hffffffff; actual = a*b; 
+  inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
+  if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+  if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
     inputEn = 0; stageEn = 0; outputEn = 0;
 
-    a = 0; b = 1; actual = a*b;
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock; 
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);    
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 1; b = 0; #2; actual = a*b;
+  // Random Value Verification
+  for (i=0; i<1000; i=i+1) begin        
+    a= $urandom % 32'hffffffff; 
+    b= $urandom % 32'hffffffff;
+    actual = a*b;
     inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);   
-    inputEn = 0; stageEn = 0; outputEn = 0;
+    
+    // $display ("a = %d b = %d OUT = %d", a, b, actual);
+    if (hi != actual[63:32]) begin
+      $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
+      $stop;
+    end
+    if (lo != actual[31:0]) begin
+      $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
+      $stop;
+    end
 
-    a = 0; b = 32'hffffffff; actual = a*b;
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
     inputEn = 0; stageEn = 0; outputEn = 0;
+  end
 
-    a = 32'hffffffff; b = 0; actual = a*b;
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 1; b = 32'hffffffff; actual = a*b; 
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 32'hffffffff; b = 1; actual = a*b; 
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 32'hfffffffe; b = 32'hfffffffe; actual = a*b;
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 32'hfffffffe; b = 32'hffffffff; actual = a*b; 
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
-
-    a = 32'hffffffff; b = 32'hffffffff; actual = a*b; 
-    inputEn = 1; clock; stageEn = 1; clock; outputEn = 1; clock;
-    if (hi != actual[63:32]) $display ("ERROR: a = %d b = %d hi = %d", a, b, hi);
-    if (lo != actual[31:0])  $display ("ERROR: a = %d b = %d lo = %d", a, b, lo);
-    inputEn = 0; stageEn = 0; outputEn = 0;
   $display("---Simulation successful---");
 end
 endmodule
