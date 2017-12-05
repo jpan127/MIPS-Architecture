@@ -14,14 +14,19 @@ module tb_soc;
 
     // DUT ports
     logic     clock, reset;      // Inputs
-    logic5    gpio_in1;
+    logic [5:0] gpio_in1;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
     logic32   instruction, pc;
     logic16   gpio_out;
+    integer   n;
 
     // Testbench variables
-    logic16    counter;
+    logic16   counter;
+    logic [1:0] stop;
+    logic32   correct;
+    logic16   actual [1:0];
+    logic [3:0] state;
 
     // DUT
     soc DUT(.*);
@@ -39,57 +44,61 @@ module tb_soc;
         end
     endtask
 
+    function calc_factorial(input logic4 n, output logic32 ret);
+        begin 
+            ret = 1;
+            for (logic[31:0] i=2; i<(n+1); i++) begin 
+                ret *= i;
+            end
+            return ret;
+        end
+    endfunction : calc_factorial
+
     // Initial state
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
-        clock    = 0;
-        gpio_in1 = 0;
+        clock   = 0;
+        { actual[1], actual[0] } = 0;
         `reset_system
     end
 
     // Generate #10 cycle clock
     always #5 clock = ~clock;
 
-    // Increment counter every clock
-    always_ff @(posedge clock, posedge reset) begin
+    // Testbench
+    initial begin 
 
-        // Reset
-        if (reset) begin
-            counter <= 0;
-        end
+        #10;
 
-        // No reset
-        else begin
+        for (n=0; n<12; n++) begin 
 
-            // Stop simulation after program ends
-            if (instruction == 32'h0800001F) begin
-                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_2], "ALU FINAL RESULT");
-                $display("Total Instructions: %d", counter);
-                $display("///////////////////////////////////////////////////////////////////////");
-                $stop;
+            // Reset registers and everything every time
+            // `reset_system
+
+            gpio_in1 = n;
+
+            // Wait until last instruction
+            do #10; while (instruction != 32'h08000000);
+
+            // Get correct result
+            #30 calc_factorial(n, correct);
+
+            actual[0] = gpio_out;
+            gpio_in1[5:4] = 2'b01;
+
+            #1 actual[1] = gpio_out;
+
+            if ({actual[1], actual[0]} != correct) begin 
+                $display("[%t] GPIO OUT %d FAILED, CORRECT: %d, ACTUAL: %d", $realtime(), n, correct, {actual[1], actual[0]});
             end
-
-            // Program has not ended
             else begin 
-                // Increment Counter
-                counter <= counter + 1;
-
-                // Check dmem write data only when write enable is on
-                if (dmem_we) begin 
-                    // Check each case when it should be writing data to dmem
-                    case (alu_out[9:0]) 
-                        10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
-                        10'h1F8: assert_equal(32'hC,  dmem_wd, "DMEM_WD 2" );   // Assembler says 0x8 but we use JAL = PC + 8
-                        10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
-                        10'h1F0: assert_equal(32'h58, dmem_wd, "DMEM_WD 4" );
-                        10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
-                        10'h1E8: assert_equal(32'h58, dmem_wd, "DMEM_WD 6" );
-                        10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
-                        10'h1E0: assert_equal(32'h58, dmem_wd, "DMEM_WD 8" );
-                    endcase
-                end
+                $display("[%t] GPIO OUT %d SUCCESS", $realtime(), n);
             end
+
         end
+
+        $display("///////////////////////////////////////////////////////////////////////");
+        $stop;
     end
 
 endmodule

@@ -24,7 +24,7 @@ module SoC
     
     dmem dmem (clk, WEM, alu_out[7:2], wd_dm, DmemData); 
     fact_top fact_mem(clk, rst, alu_out[3:2],WE1,wd_dm[3:0],FactData);
-    gpio_t gpio_mem(clk, rst, WE2, alu_out[3:2], wd_dm, gpi1, gpo1, gpo1, gpo2, GpioData); 
+    gpio_t gpio_mem(clk, rst, WE2, alu_out[3:2], wd_dm, gpi1, gpi1, gpo1, gpo2, GpioData); 
     
     Soc_mux mux(RdSel,DmemData,DmemData,FactData,GpioData,rd_dm);
                         

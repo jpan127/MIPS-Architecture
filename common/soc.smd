@@ -1,0 +1,29 @@
+# $t0 = 8
+# $t1 = 9
+# $t2 = 10
+# $t3 = 11
+# $t4 = 12
+# $t5 = 13
+main:
+    addi $13, $0, 0       # Make sure $13 is empty
+    addi $8,  $0, 0xF
+    addi $9,  $0, 1
+    addi $12, $0, 16
+
+fact:
+    lw   $10, 0x0900($0)  # Load n
+    and  $11, $10, $8     # n & F = n
+    sw   $11, 0x0800($0)  # Store n
+    sw   $9,  0x0804($0)  # Store 1
+
+poll:
+    lw  $13, 0x0808($0)   # 1 for done, 0 for not done
+    beq $13, $0, poll     # When LW is loading in execute, branch is already branching in decode, special hazard
+
+end:
+    and $11, $10, $12     # $11 = n and 16 (fifth bit)
+    or  $11, $11, $13     # $11 = $11 or (error, done) Hazard
+    lw  $13, 0x080C($0)   # Final value, read from factorial
+    sw  $13, 0x090C($0)   # Hazard, output to gpio
+    sw  $11, 0x0908($0)   # Hazard, output to gpio
+    j   main

@@ -14,20 +14,16 @@ module mips
     import global_types::*;
 
     // Internal wires
-    logic [5:0]   opcode, funct;
-    logic [3:0]   alu_ctrl;
-    logic         zero, sel_alu_b, rf_we;
-    logic [1:0]   sel_pc, sel_result, sel_wa;
+    logic [5:0] opcode, funct;
+    assign opcode = d_instruction[31:26];
+    assign funct  = d_instruction[5:0];
 
     // Decode
-    logic32       d_instruction;
+    logic32 d_instruction;
 
     // Internal bus between control unit and datapath
     ControlBus control_bus();
 
-    // Wiring
-    assign opcode  = d_instruction[31:26];
-    assign funct   = d_instruction[5:0];
 
     control_unit CU 
     (

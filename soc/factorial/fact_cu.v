@@ -64,7 +64,7 @@ case(CS)
         Sub: begin
            Done <=0;Error<=0;     
            if(GT_flag) begin ctrl <= S4; NS <= Mul; end
-           else         begin ctrl <= S4; NS <= Out; end
+           else         begin ctrl <= S4; NS <= Out; end // when count = 1, output
         end
         ///////////////////////
         Out: begin

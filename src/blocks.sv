@@ -17,7 +17,7 @@
 
 module regfile
 
-(   input           clock,
+(   input           clock, reset,
     input           we,
     input   [4:0]   wa, ra0, ra1,
     input   [31:0]  wd,
@@ -30,17 +30,18 @@ module regfile
     reg [31:0] rf [31:0];
     integer i;
 
-    // Initialize to 0
-    initial begin
-        for (i=0; i<32; i=i+1) begin
-            rf[i] = 0;
-        end
-        rf[REG_SP] = 32'h200;
-    end
-
     // Clock triggered write operation
-    always_ff @ (negedge clock) begin
-        if (we && wa != 0) rf[wa] <= wd;
+    always_ff @ (negedge clock, posedge reset) begin
+
+        if (reset) begin 
+            for (i=0; i<32; i=i+1) begin
+                rf[i] = 0;
+            end
+            rf[REG_SP] = 32'h200;
+        end
+
+        else if (we && wa != 0) rf[wa] <= wd;
+        
     end
 
     // Combinational read operation

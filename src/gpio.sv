@@ -1,22 +1,29 @@
 `timescale 1ns / 1ps
 
-module dreg
-(input clk, rst, en, [31:0] d, output reg [31:0] q);
-    always @ (posedge clk, posedge rst)
-    begin
-        if (rst)    q <= 0;
-        else if(en) q <= d;
+module dreg #(parameter WIDTH=32)
+
+(   input                  clk, rst, en, 
+    input [WIDTH-1:0]      d, 
+    output reg [WIDTH-1:0] q             );
+
+    always @ (posedge clk, posedge rst) begin
+        if (rst)     q <= 0;
+        else if (en) q <= d;
     end
+
 endmodule
 
-module gpio_t(input clk, rst, we, input[1:0] addr, input[31:0] wd, gpi1, gpi2,
+module gpio_t
+
+(input clk, rst, we, input[1:0] addr, input[31:0] wd, gpi1, gpi2,
     output[31:0] gpo1, gpo2, rd);
+
     wire[1:0] rd_sel;
     wire we1, we2;
     gpio_decoder addr_decoder(we, addr, we1, we2, rd_sel);
     
-    dreg gpo1_r(clk, rst, we1, wd, gpo1);
-    dreg gpo2_r(clk, rst, we2, wd, gpo2);
+    dreg gpo1_r(clk, rst, we1, wd, gpo1);   // addr = 10
+    dreg gpo2_r(clk, rst, we2, wd, gpo2);   // addr = 11
     
     mux4 #(32) gpio_mux
     (
@@ -30,7 +37,9 @@ module gpio_t(input clk, rst, we, input[1:0] addr, input[31:0] wd, gpi1, gpi2,
 
 endmodule
 
-module gpio_decoder(input we, input[1:0] addr, output reg we1, we2, output[1:0] rd_sel);
+module gpio_decoder
+
+(input we, input[1:0] addr, output reg we1, we2, output[1:0] rd_sel);
     //Based on the addr, write, or read registers.
     //If an adddress is selected and no we, just rd
     //if an address is selected for the reg's, and we then write.

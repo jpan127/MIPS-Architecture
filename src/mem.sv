@@ -21,7 +21,7 @@ module imem
         for (i=0; i<64; i++) begin 
             rom[i] = 0;
         end
-        $readmemh("memfile_hazards.dat", rom);
+        $readmemh("memfile_soc.dat", rom);
     end
     
     // Read
@@ -33,7 +33,7 @@ endmodule
 module dmem 
 
 (   input           clock, we,
-    input   [8:0]   addr, 
+    input   [11:0]  addr, 
     input   [31:0]  wd,
     output  [31:0]  rd          );
     

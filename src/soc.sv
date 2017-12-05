@@ -22,7 +22,7 @@ endmodule
 module soc
 
 (   input         clock, reset,
-    input  [4:0]  gpio_in1,
+    input  [5:0]  gpio_in1,
     output [31:0] dmem_wd, alu_out,
     output        dmem_we,
     output [31:0] instruction, pc,
@@ -86,10 +86,20 @@ module soc
         .Clk         (clock),
         .Rst         (reset),
         .A           (alu_out[3:2]),
-        .WE          (we_factorial),
-        .WD          (dmem_wd[3:0]),
+        .WE          (we_factorial),    // Has to be SW 0x8XX
+        .WD          (dmem_wd[3:0]),    // GPIO -> register -> SW -> factorial
         .RD          (factorial_rd)
     );
+
+    // factorial_top FACTORIAL
+    // (
+    //     .we      (we_factorial),
+    //     .rst     (reset),
+    //     .clk     (clock),
+    //     .wa      (alu_out[3:2]),
+    //     .wd      (dmem_wd[3:0]),
+    //     .fact_out(factorial_rd)
+    // );
 
     gpio_t GPIO
     (
@@ -98,8 +108,8 @@ module soc
         .we          (we_gpio),
         .addr        (alu_out[3:2]),
         .wd          (dmem_wd),
-        .gpi1        (gpio_in1),
-        .gpi2        (gpio_out1),
+        .gpi1        ({ 27'b0, gpio_in1[3:0] }),
+        .gpi2        ({ 27'b0, gpio_in1[3:0] }),
         .gpo1        (gpio_out1),
         .gpo2        (gpio_out2),
         .rd          (gpio_rd)
@@ -115,11 +125,13 @@ module soc
         .y           (rd)               // Final read data
     );
 
-    mux2 #(16) GPIO_OUT_MUX
+    mux4 #(16) GPIO_OUT_MUX
     (
         .a           (gpio_out2[15:0]),
         .b           (gpio_out2[31:16]),
-        .sel         (gpio_out1[4]),
+        .c           (gpio_out1[15:0]),
+        .d           (gpio_out1[31:16]),
+        .sel         (gpio_in1[5:4]),
         .y           (gpio_out)
     );
 

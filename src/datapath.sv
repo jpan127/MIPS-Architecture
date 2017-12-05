@@ -85,7 +85,7 @@ module datapath
         .w_rf_wa           (writeback_bus.w_rf_wa),
         .m_rf_we           (memory_bus.m_rf_we),
         .w_rf_we           (writeback_bus.w_rf_we),
-        .w_sel_result      (writeback_bus.w_sel_result),
+        .e_sel_result      (execute_bus.e_sel_result),
         .sel_forward_alu_a (sel_forward_alu_a),
         .sel_forward_alu_b (sel_forward_alu_b),
         .f_stall           (f_stall),
@@ -170,6 +170,7 @@ module datapath
     regfile RF  
     ( 
         .clock      (clock),
+        .reset      (reset),
         .we         (writeback_bus.w_rf_we),                                        // From writeback
         .wa         (writeback_bus.w_rf_wa),                                        // From writeback
         .ra0        (ra0),                                                          // From decode
@@ -194,7 +195,7 @@ module datapath
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Bus Inputs
-    assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;                             // From execute
+    assign memory_bus.e_dmem_wd    = forward_alu_b;                                 // From execute
     assign memory_bus.e_rf_we      = execute_bus.e_rf_we;                           // From execute
     assign memory_bus.e_sel_result = execute_bus.e_sel_result;                      // From execute
     assign memory_bus.e_dmem_we    = execute_bus.e_dmem_we;                         // From execute
