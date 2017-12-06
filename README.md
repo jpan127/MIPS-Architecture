@@ -27,4 +27,4 @@ A 32-bit single cycle MIPS architecture in SystemVerilog.
     SW     [I] : M[ R[rs] + sign_extend(immediate) ] = R[rt]
 
 ## Microarchitecture
-![Screenshot](design/MIPS.jpg)
+![Screenshot](design/MIPS.png)
