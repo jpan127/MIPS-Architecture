@@ -95,17 +95,28 @@ module datapath
     //                                  PIPELINED MULTIPLIER                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // logic en_multiplier, done, d_hi, d_lo, q_hi, q_lo;
-    // assign en_multiplier = (execute_bus.e_alu_ctrl == MULTUac);
+    logic   en_mult, done;
+    logic32 product_hi, product_lo;
+    logic64 product;
+
+    assign product = alu_a * alu_b;
+
+    // Special Purpose Registers : HI and LO
+    d_en_reg REG_HI ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[63:32]), .q(product_hi) );
+    d_en_reg REG_LO ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[31: 0]), .q(product_lo) );
+
+    // logic   en_mult, done;
+    // logic32 product_hi, product_lo;
+    // logic64 product;
+    // assign en_mult = (execute_bus.e_alu_ctrl == MULTUac);
     // multiplier_pipelined PIPELINED_MULTIPLIER
     // (
     //     .clk      (clock),
     //     .rst      (reset),
-    //     .en_in    (en_multiplier),
+    //     .en_in    (en_mult),    // From execute
     //     .A        (alu_a),
     //     .B        (alu_b),
-    //     .out_hi   (d_hi),
-    //     .out_lo   (d_lo),
+    //     .product  (product),
     //     .done     (done)
     // );
 
@@ -114,8 +125,8 @@ module datapath
     //     .clock    (clock),
     //     .reset    (reset),
     //     .enable   (done),
-    //     .d        (d_hi),
-    //     .q        (q_hi)
+    //     .d        (product[63:32]),
+    //     .q        (product_hi)
     // );
 
     // d_en_reg REG_LO
@@ -123,8 +134,8 @@ module datapath
     //     .clock    (clock),
     //     .reset    (reset),
     //     .enable   (done),
-    //     .d        (d_lo),
-    //     .q        (q_lo)
+    //     .d        (product[31: 0]),
+    //     .q        (product_lo)
     // );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,6 +186,7 @@ module datapath
     );
 
     // Branch logic + address
+    // If hazard between branch and instruction before, there is no forwarding or stalling
     assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1) & (decode_bus.d_instruction[31:26] == OPCODE_BEQ);
     assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
     assign sign_imm_sh = shift_left_2(sign_imm);
@@ -271,7 +283,10 @@ module datapath
         .a          (alu_a),                                                        // From execute / forward
         .b          (alu_b), 
         .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
-        .y          (memory_bus.e_alu_out)                                          // To memory
+        .y          (memory_bus.e_alu_out),                                         // To memory
+        .en_mult    (en_mult),                                                      // To REG_HI, REG_LO
+        .product_hi (product_hi),                                                   // From REG_HI
+        .product_lo (product_lo)                                                    // From REG_LO
     );
 
     // Selects which is the write address

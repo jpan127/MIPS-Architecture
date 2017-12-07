@@ -7,14 +7,17 @@
 // Reset on, clock, reset off
 `define reset_system    reset = 1; #10 reset = 0;
 
-module tb_soc;
+module tb_system;
 
     // Packages
     import global_types::*;
 
     // DUT ports
     logic     clock, reset;      // Inputs
-    logic5    gpio_in1;
+    logic5    gpio_in;    
+    logic5    rf_ra2;
+
+    logic32   rf_rd2;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
     logic32   instruction, pc;
@@ -43,7 +46,7 @@ module tb_soc;
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
         clock    = 0;
-        gpio_in1 = 0;
+        gpio_in = 0;
         `reset_system
     end
 
@@ -62,8 +65,8 @@ module tb_soc;
         else begin
 
             // Stop simulation after program ends
-            if (instruction == 32'h0800001F) begin
-                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_2], "ALU FINAL RESULT");
+            if (instruction == 32'h0800001B) begin
+                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_7], "ALU FINAL RESULT");
                 $display("Total Instructions: %d", counter);
                 $display("///////////////////////////////////////////////////////////////////////");
                 $stop;
@@ -81,11 +84,11 @@ module tb_soc;
                         10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
                         10'h1F8: assert_equal(32'hC,  dmem_wd, "DMEM_WD 2" );   // Assembler says 0x8 but we use JAL = PC + 8
                         10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
-                        10'h1F0: assert_equal(32'h58, dmem_wd, "DMEM_WD 4" );
+                        10'h1F0: assert_equal(32'h50, dmem_wd, "DMEM_WD 4" );
                         10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
-                        10'h1E8: assert_equal(32'h58, dmem_wd, "DMEM_WD 6" );
+                        10'h1E8: assert_equal(32'h50, dmem_wd, "DMEM_WD 6" );
                         10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
-                        10'h1E0: assert_equal(32'h58, dmem_wd, "DMEM_WD 8" );
+                        10'h1E0: assert_equal(32'h50, dmem_wd, "DMEM_WD 8" );
                     endcase
                 end
             end

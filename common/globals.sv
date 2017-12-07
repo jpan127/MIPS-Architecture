@@ -20,6 +20,7 @@ package global_types;
     typedef logic [15:0] logic16;
     typedef logic [25:0] logic26;
     typedef logic [31:0] logic32;
+    typedef logic [63:0] logic64;
 
     // Constants
     localparam logic32  ZERO32 = 'd0,

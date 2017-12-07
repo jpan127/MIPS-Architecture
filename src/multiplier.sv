@@ -1,14 +1,12 @@
 // Unsigned 32-bit 3-stage Pipelined Multiplier
-module multiplier_pipelined (
-    input         clk, rst,
+module multiplier_pipelined 
+
+(   input         clk, rst,
     input         en_in,
     input  [31:0] A, B,
-    output [31:0] out_hi, out_lo,
-    output        done);
+    output [63:0] product,
+    output        done              );
     
-    assign out_lo = sumL4_0[31:0];
-    assign out_hi = sumL4_0[63:32];
-
     logic[1:0] state;
     logic      running;
 
@@ -17,21 +15,24 @@ module multiplier_pipelined (
         if (reset) begin 
             state   <= 0;
             running <= 0;
+            done    <= 0;
         end
         // Start state machine
         else if (en_in && !running) begin 
             state   <= 1;
             running <= 1;
+            done    <= 0;
         end
         // Done, set flag, stop running
         else if (state == 2'd2) begin 
-            done    <= 1;
             state   <= 0;
             running <= 0;
+            done    <= 1;
         end
         // Go to next state
         else if (running) begin
-            state <= state + 1;
+            state   <= state + 1;
+            done    <= 0;
         end
     end
 
@@ -175,7 +176,7 @@ module multiplier_pipelined (
     cla_64bit cla_64bitL3_1   (.A(sumL2_2[63:0]),  .B(sumL2_3[63:0]),  .c_in(1'b0), .c_out(d29), .Sum(sumL3_1));
 
     // 4rd Level Multiplier CLAs
-    cla_64bit cla_64bitL4_0   (.A(sumL3_0[63:0]),  .B(sumL3_1[63:0]),  .c_in(1'b0), .c_out(d30), .Sum(sumL4_0));
+    cla_64bit cla_64bitL4_0   (.A(sumL3_0[63:0]),  .B(sumL3_1[63:0]),  .c_in(1'b0), .c_out(d30), .Sum(product));
 endmodule
 
 // 4-bit CLA Logic

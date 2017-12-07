@@ -131,11 +131,13 @@ endmodule
 
 module alu
 
-(   input               clock, reset,
-    input       [31:0]  a, b,
-    input       [3:0]   sel,
-    output reg  [31:0]  y,
-    output              zero    );
+(   input                clock, reset,
+    input        [31:0]  a, b,
+    input        [3:0]   sel,
+    output logic [31:0]  y,
+    // External multiplier
+    output logic         en_mult,
+    input        [31:0]  product_hi, product_lo );
 
     logic        enable;        // Enables the SPRs
     logic [31:0] d_hi, d_lo;    // Input to SPRs
@@ -153,9 +155,9 @@ module alu
     // Determines if HI and LO registers are necessary
     always_comb begin
         case (sel)
-            4'd7:    enable = 1;
-            4'd8:    enable = 1;
-            default: enable = 0;
+            4'd7:    en_mult = 1;
+            4'd8:    enable  = 1;
+            default: { enable, en_mult } = 2'b0;
         endcase
     end
 
@@ -172,10 +174,10 @@ module alu
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
             4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky (dont look at instruction)
-            4'd7:    { d_hi, d_lo } = a * b;        // MULT
+            4'd7:    y = 0;                         // MULT, activate external multiplier
             4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
-            4'd9:    y = q_hi;                      // MFHI
-            4'd10:   y = q_lo;                      // MFLO
+            4'd9:    y = product_hi;                // MFHI
+            4'd10:   y = product_lo;                // MFLO
             4'd11:   y = a;                         // JR, pass through a
             4'd12:   y = a;                         // Pass through
             4'd13:   y = a << b;                    // SLL
@@ -183,8 +185,5 @@ module alu
             default: y = 32'dZ;                     // UNDEFINED
         endcase
     end
-
-    // Zero flag
-    assign zero = (y == 0);
 
 endmodule

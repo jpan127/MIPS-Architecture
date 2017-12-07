@@ -21,7 +21,7 @@ module imem
         for (i=0; i<64; i++) begin 
             rom[i] = 0;
         end
-        $readmemh("memfile_soc.dat", rom);
+        $readmemh("memfile_hazards.dat", rom);
     end
     
     // Read

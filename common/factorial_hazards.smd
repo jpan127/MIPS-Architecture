@@ -1,9 +1,8 @@
 main:
     addi $4, $0, 4
     jal  factorial
-    nop
-    nop
     add $6, $7, $0
+    nop                 # Wait for result
     j end
 
 factorial:
@@ -12,19 +11,17 @@ factorial:
     sw   $ra, 0($sp)
     addi $8, $0, 2
     slt  $8, $4, $8
+    nop                 # Needs nops because forwarding + stalling does not work for branching in decode...
+    nop
     beq  $8, $0, else
-    nop
-    nop
     addi $7, $0, 1
     addi $sp, $sp, 8
     jr   $ra
-    nop
     nop
 
 else:
     addi  $4, $4, -1
     jal factorial
-    nop
     nop
     lw    $ra, 0($sp)
     lw    $4, 4($sp)
@@ -32,7 +29,6 @@ else:
     multu $4, $7
     mflo  $7
     jr    $ra
-    nop
     nop
 
 end:

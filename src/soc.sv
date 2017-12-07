@@ -9,7 +9,7 @@ module address_decoder
 
     always_comb begin
         casex(address[11:8])      
-            4'd0:    { we1, we2, dmem_we, sel_rd } = { 1'b0,        1'b0,        dmem_we_req, 2'd0 };
+            4'd1:    { we1, we2, dmem_we, sel_rd } = { 1'b0,        1'b0,        dmem_we_req, 2'd0 };
             4'd8:    { we1, we2, dmem_we, sel_rd } = { dmem_we_req, 1'b0,        1'b0,        2'd2 };
             4'd9:    { we1, we2, dmem_we, sel_rd } = { 1'b0,        dmem_we_req, 1'b0,        2'd3 };
             default: { we1, we2, dmem_we, sel_rd } = { 1'b0,        1'b0,        1'b0,        2'b0 };

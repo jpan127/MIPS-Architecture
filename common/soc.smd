@@ -26,4 +26,5 @@ end:
     lw  $13, 0x080C($0)   # Final value, read from factorial
     sw  $13, 0x090C($0)   # Hazard, output to gpio
     sw  $11, 0x0908($0)   # Hazard, output to gpio
+    nop                   # For result to output
     j   main
