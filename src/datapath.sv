@@ -95,48 +95,50 @@ module datapath
     //                                  PIPELINED MULTIPLIER                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    logic   en_mult, done;
-    logic32 product_hi, product_lo;
-    logic64 product;
-
-    assign product = alu_a * alu_b;
-
-    // Special Purpose Registers : HI and LO
-    d_en_reg REG_HI ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[63:32]), .q(product_hi) );
-    d_en_reg REG_LO ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[31: 0]), .q(product_lo) );
-
     // logic   en_mult, done;
     // logic32 product_hi, product_lo;
     // logic64 product;
-    // assign en_mult = (execute_bus.e_alu_ctrl == MULTUac);
-    // multiplier_pipelined PIPELINED_MULTIPLIER
-    // (
-    //     .clk      (clock),
-    //     .rst      (reset),
-    //     .en_in    (en_mult),    // From execute
-    //     .A        (alu_a),
-    //     .B        (alu_b),
-    //     .product  (product),
-    //     .done     (done)
-    // );
 
-    // d_en_reg REG_HI 
-    // (
-    //     .clock    (clock),
-    //     .reset    (reset),
-    //     .enable   (done),
-    //     .d        (product[63:32]),
-    //     .q        (product_hi)
-    // );
+    // assign product = alu_a * alu_b;
 
-    // d_en_reg REG_LO
-    // (
-    //     .clock    (clock),
-    //     .reset    (reset),
-    //     .enable   (done),
-    //     .d        (product[31: 0]),
-    //     .q        (product_lo)
-    // );
+    // // Special Purpose Registers : HI and LO
+    // d_en_reg REG_HI ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[63:32]), .q(product_hi) );
+    // d_en_reg REG_LO ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[31: 0]), .q(product_lo) );
+
+    logic   en_mult, done;
+    logic32 product_hi, product_lo;
+    logic64 product;
+    assign en_mult = (execute_bus.d_alu_ctrl == MULTUac);                           // Only enabled with correct ALU opcode
+    
+    multiplier_pipelined PIPELINED_MULTIPLIER
+    (
+        .clk      (clock),
+        .rst      (reset),
+        .en_in    (en_mult),                                                        // From decode
+        .A        (execute_bus.d_rd0),                                              // From decode
+        .B        (execute_bus.d_rd1),                                              // From decode
+        .product  (product),                                                        // To writeback / hi / lo
+        .done     (done)                                                            // To hi / lo
+    );
+
+    // When multiplier is done it will enable these registers and load in the product
+    d_en_reg REG_HI 
+    (
+        .clock    (clock),
+        .reset    (reset),
+        .enable   (done),
+        .d        (product[63:32]),
+        .q        (product_hi)
+    );
+
+    d_en_reg REG_LO
+    (
+        .clock    (clock),
+        .reset    (reset),
+        .enable   (done),
+        .d        (product[31:0]),
+        .q        (product_lo)
+    );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     PIPELINE : FETCH                                      //
@@ -283,10 +285,7 @@ module datapath
         .a          (alu_a),                                                        // From execute / forward
         .b          (alu_b), 
         .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
-        .y          (memory_bus.e_alu_out),                                         // To memory
-        .en_mult    (en_mult),                                                      // To REG_HI, REG_LO
-        .product_hi (product_hi),                                                   // From REG_HI
-        .product_lo (product_lo)                                                    // From REG_LO
+        .y          (memory_bus.e_alu_out)                                          // To memory
     );
 
     // Selects which is the write address
@@ -321,12 +320,16 @@ module datapath
     assign writeback_bus.m_sel_result = memory_bus.m_sel_result;                    // From memory
     assign writeback_bus.m_pc_plus4   = memory_bus.m_pc_plus4;                      // From memory
     
-    mux4 #(32) MUX_RESULT
+    mux8 #(32) MUX_RESULT
     ( 
         .a          (writeback_bus.w_dmem_rd),                                      // From writeback
         .b          (writeback_bus.w_alu_out),                                      // From writeback
         .c          (pc_plus8),                                                     // From writeback
-        .d          (UNUSED_32),                                                    // UNUSED
+        .d          (product_hi),                                                   // UNUSED
+        .e          (product_lo),
+        .f          (UNUSED_32),
+        .g          (UNUSED_32),
+        .h          (UNUSED_32),
         .sel        (writeback_bus.w_sel_result),                                   // From writeback 
         .y          (result)                                                        // To fetch + execute
     );

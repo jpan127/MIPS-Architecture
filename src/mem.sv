@@ -22,6 +22,7 @@ module imem
             rom[i] = 0;
         end
         $readmemh("memfile_hazards.dat", rom);
+        // $readmemh("memfile_soc.dat", rom);
     end
     
     // Read

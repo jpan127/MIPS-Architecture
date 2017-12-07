@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 // Unsigned 32-bit 3-stage Pipelined Multiplier
 module multiplier_pipelined 
 
@@ -5,23 +7,32 @@ module multiplier_pipelined
     input         en_in,
     input  [31:0] A, B,
     output [63:0] product,
-    output        done              );
+    output logic  done              );
     
     logic[1:0] state;
     logic      running;
 
+    // Register Wires - Input Register Outputs                        
+    logic [31:0] Aq, Bq;
+
     // State machine logic
-    always_ff @(posedge clock, posedge reset) begin 
-        if (reset) begin 
+    always_ff @(posedge clk, posedge rst) begin 
+        if (rst) begin 
             state   <= 0;
             running <= 0;
             done    <= 0;
+
+            Aq      <= 0;
+            Bq      <= 0;
         end
         // Start state machine
         else if (en_in && !running) begin 
             state   <= 1;
             running <= 1;
             done    <= 0;
+
+            Aq      <= A;
+            Bq      <= B;
         end
         // Done, set flag, stop running
         else if (state == 2'd2) begin 
@@ -34,17 +45,16 @@ module multiplier_pipelined
             state   <= state + 1;
             done    <= 0;
         end
+        else begin 
+            state   <= 0;
+            running <= 0;
+            done    <= 0;
+        end
     end
 
     ////////////////////////////////////////////////// 
     //              Input Regigister
     //////////////////////////////////////////////////
-
-    // Register Wires - Input Register Outputs                        
-    wire [31:0] Aq, Bq;
-
-    d_en_reg input_regA (.d(A), .q(Aq), .clock(clk), .reset(rst), .enable((en_in)));
-    d_en_reg input_regB (.d(B), .q(Aq), .clock(clk), .reset(rst), .enable((en_in)));
 
     // 32-bit Partial Products
     wire [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 
@@ -53,7 +63,7 @@ module multiplier_pipelined
                 pp24, pp25, pp26, pp27, pp28, pp29, pp30, pp31;
 
     partial_product pp_32(
-        .a    (Aq),      .b    (Aq),
+        .a    (Aq),      .b    (Bq),
         .pp0  (pp0),    .pp1  (pp1),    .pp2  (pp2),    .pp3  (pp3),
         .pp4  (pp4),    .pp5  (pp5),    .pp6  (pp6),    .pp7  (pp7),
         .pp8  (pp8),    .pp9  (pp9),    .pp10 (pp10),   .pp11 (pp11),   

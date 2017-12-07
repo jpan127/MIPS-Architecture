@@ -4,7 +4,7 @@ module staller
 
 (   input        reset,
     input [4:0]  d_rs, e_rt, d_rt,
-    input [1:0]  e_sel_result,
+    input [2:0]  e_sel_result,
     output logic f_stall, d_stall, e_flush );
 
     import global_types::*;
@@ -78,7 +78,7 @@ module hazard_controller
     input  [4:0] d_rs, d_rt, e_rs, e_rt,                // Register operands
     input  [4:0] m_rf_wa, w_rf_wa,                      // RF write register 1-2 stages ahead
     input        m_rf_we, w_rf_we,                      // RF write enable 1-2 stages ahead
-    input  [1:0] e_sel_result,                          // Mux result select control signal
+    input  [2:0] e_sel_result,                          // Mux result select control signal
     output [1:0] sel_forward_alu_a, sel_forward_alu_b,  // Mux forward select control signals
     output       f_stall, d_stall, e_flush    );        // Stall/Freeze control signals
 

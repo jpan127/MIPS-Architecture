@@ -54,13 +54,13 @@ module tb_datapath;
     );
 
     // Control signal
-    reg  [11:0] ctrl;
+    logic13 ctrl;
     always_comb begin
         {
             control_bus.rf_we,          // 1 bit
             control_bus.sel_wa,         // 2 bits
             control_bus.sel_alu_b,      // 1 bit
-            control_bus.sel_result,     // 2 bits
+            control_bus.sel_result,     // 3 bits
             control_bus.sel_pc,         // 2 bits
             control_bus.alu_ctrl        // 4 bits
         } = ctrl;

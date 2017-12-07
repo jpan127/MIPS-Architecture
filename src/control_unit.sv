@@ -16,10 +16,10 @@ module control_unit
 
     // Control signal sets alu_op which then defines alu control, split I-Type vs R-Type
     logic2  alu_op;
-    logic11 ctrl;
+    logic12 ctrl;
 
     // Fail when undefined opcode
-    localparam CTRL_UNDEFINED = 11'bX;
+    localparam CTRL_UNDEFINED = 12'bX;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -29,7 +29,7 @@ module control_unit
         control_bus.sel_wa,         // 2 bits
         control_bus.sel_alu_b,      // 1 bit
         control_bus.dmem_we,        // 1 bit
-        control_bus.sel_result,     // 2 bits
+        control_bus.sel_result,     // 3 bits
         control_bus.sel_pc,         // 2 bits
         alu_op                      // 2 bits
     } = ctrl;
@@ -50,6 +50,8 @@ module control_unit
             case (funct)
                 FUNCT_JR:    ctrl = JRc;
                 FUNCT_MULTU: ctrl = MULTUc;
+                FUNCT_MFHI:  ctrl = MFHIc;
+                FUNCT_MFLO:  ctrl = MFLOc;
                 FUNCT_DIVU:  ctrl = DIVUc;
                 default:     ctrl = Rc;
             endcase

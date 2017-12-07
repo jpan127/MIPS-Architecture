@@ -174,10 +174,10 @@ module alu
             4'd4:    y = a & b;                     // AND
             4'd5:    y = a | b;                     // OR
             4'd6:    y = (a < b);                   // SLT, assembler reverses the order when compiling so tricky (dont look at instruction)
-            4'd7:    y = 0;                         // MULT, activate external multiplier
+            4'd7:    y = 32'hDEADBEEF;              // Do nothing, external multiplier
             4'd8:    { d_hi, d_lo } = { div, mod }; // DIV
-            4'd9:    y = product_hi;                // MFHI
-            4'd10:   y = product_lo;                // MFLO
+            4'd9:    y = 32'hBAAAAAAD;              // MFHI Do nothing, external multiplier
+            4'd10:   y = 32'hFEEDBABE;              // MFLO Do nothing, external multiplier
             4'd11:   y = a;                         // JR, pass through a
             4'd12:   y = a;                         // Pass through
             4'd13:   y = a << b;                    // SLL

@@ -18,7 +18,7 @@ module tb_hazards;
     logic6 d_rs, d_rt, e_rs, e_rt;                // Register operands
     logic6 m_rf_wa, w_rf_wa;                      // RF write register 1-2 stages ahead
     logic  m_rf_we, w_rf_we;                      // RF write enable 1-2 stages ahead
-    logic2 w_sel_result;                          // Mux result select control signal
+    logic3 w_sel_result;                          // Mux result select control signal
     // Outputs
     logic2 sel_forward_alu_a, sel_forward_alu_b;  // Mux forward select control signals
     logic  f_stall, d_stall, e_flush;             // Stall/Freeze control signals

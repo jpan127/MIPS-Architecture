@@ -26,7 +26,9 @@ else:
     lw    $ra, 0($sp)
     lw    $4, 4($sp)
     addi  $sp, $sp, 8
+    nop                 # Needed for pipelined multiplier since hazards don't forward that
     multu $4, $7
+    nop                 # Needed for pipelined multiplier since hazards don't forward that
     mflo  $7
     jr    $ra
     nop

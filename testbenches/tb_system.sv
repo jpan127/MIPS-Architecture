@@ -14,7 +14,7 @@ module tb_system;
 
     // DUT ports
     logic     clock, reset;      // Inputs
-    logic5    gpio_in;    
+    logic6    gpio_in;    
     logic5    rf_ra2;
 
     logic32   rf_rd2;
@@ -65,7 +65,7 @@ module tb_system;
         else begin
 
             // Stop simulation after program ends
-            if (instruction == 32'h0800001B) begin
+            if (instruction == 32'h0800001D) begin
                 assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_7], "ALU FINAL RESULT");
                 $display("Total Instructions: %d", counter);
                 $display("///////////////////////////////////////////////////////////////////////");
