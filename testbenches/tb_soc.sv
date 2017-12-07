@@ -72,9 +72,6 @@ module tb_soc;
 
         for (n=0; n<12; n++) begin 
 
-            // Reset registers and everything every time
-            // `reset_system
-
             gpio_in1 = n;
 
             // Wait until last instruction

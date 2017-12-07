@@ -91,16 +91,6 @@ module soc
         .RD          (factorial_rd)
     );
 
-    // factorial_top FACTORIAL
-    // (
-    //     .we      (we_factorial),
-    //     .rst     (reset),
-    //     .clk     (clock),
-    //     .wa      (alu_out[3:2]),
-    //     .wd      (dmem_wd[3:0]),
-    //     .fact_out(factorial_rd)
-    // );
-
     gpio_t GPIO
     (
         .clk         (clock),
