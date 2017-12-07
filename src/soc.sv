@@ -23,17 +23,15 @@ module soc
 
 (   input         clock, reset,
     input  [5:0]  gpio_in,
+    input  [4:0]  rf_ra2,
+    output [31:0] rf_rd2,
     output [31:0] dmem_wd, alu_out,
     output        dmem_we,
     output [31:0] instruction, pc,
-    output [15:0] gpio_out );
+    output [15:0] gpio_out          );
 
     // Packages
     import global_types::*;
-
-    // Debug bus
-    logic5  rf_ra2;
-    logic32 rf_rd2;
 
     // Factorial / SoC
     logic   dmem_we_req;
@@ -98,8 +96,8 @@ module soc
         .we          (we_gpio),
         .addr        (alu_out[3:2]),
         .wd          (dmem_wd),
-        .gpi1        ({ 27'b0, gpio_in[3:0] }),
-        .gpi2        ({ 27'b0, gpio_in[3:0] }),
+        .gpi1        ({ 28'b0, gpio_in[3:0] }),
+        .gpi2        ({ 28'b0, gpio_in[3:0] }),
         .gpo1        (gpio_out1),
         .gpo2        (gpio_out2),
         .rd          (gpio_rd)

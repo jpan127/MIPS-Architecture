@@ -14,11 +14,13 @@ module tb_soc;
 
     // DUT ports
     logic     clock, reset;      // Inputs
-    logic [5:0] gpio_in1;
+    logic [5:0] gpio_in;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
     logic32   instruction, pc;
     logic16   gpio_out;
+    logic5    rf_ra2;
+    logic32   rf_rd2;
     integer   n;
 
     // Testbench variables
@@ -72,7 +74,7 @@ module tb_soc;
 
         for (n=0; n<12; n++) begin 
 
-            gpio_in1 = n;
+            gpio_in = n;
 
             // Wait until last instruction
             do #10; while (instruction != 32'h08000000);
@@ -81,7 +83,7 @@ module tb_soc;
             #30 calc_factorial(n, correct);
 
             actual[0] = gpio_out;
-            gpio_in1[5:4] = 2'b01;
+            gpio_in[5:4] = 2'b01;
 
             #1 actual[1] = gpio_out;
 

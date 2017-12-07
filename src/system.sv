@@ -21,18 +21,13 @@ module system
     // Internal wires
     logic32 alu_out, dmem_wd;
     logic32 pc, instruction, dmem_rd;
-    logic   db_button;
+    logic   db_button, clock_5KHz;
+    logic32 rf_rd2;
+    logic16 gpio_out;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     DEBUG LED DISPLAY                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Debug bus
-    logic5  rf_ra2;
-    logic32 rf_rd2;
-
-    logic5  gpio_in;
-    logic16 gpio_out;
 
     // Selects what the right 4 LEDs display
     logic16 display_right;
@@ -92,10 +87,13 @@ module system
         .clock          (db_button),
         .reset          (reset),
         .gpio_in        (gpio_in),
+        .rf_ra2         (rf_ra),
+        .rf_rd2         (rf_rd2),
         .dmem_wd        (dmem_wd),
         .alu_out        (alu_out),
         .dmem_we        (dmem_we),
         .instruction    (instruction),
+        .pc             (pc),
         .gpio_out       (gpio_out)
     );
 

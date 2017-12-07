@@ -12,7 +12,6 @@ module tb_datapath;
     // Packages
     import testbench_globals::*;
     import global_types::*;
-    import pipeline_pkg::*;
 
     // DUT Ports
     ControlBus control_bus();

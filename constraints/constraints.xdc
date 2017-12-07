@@ -16,14 +16,14 @@ set_property -dict { PACKAGE_PIN R17   IOSTANDARD LVCMOS33 }        [get_ports {
 set_property -dict { PACKAGE_PIN T18   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[0] }];
 set_property -dict { PACKAGE_PIN U18   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[1] }];
 set_property -dict { PACKAGE_PIN R13   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[2] }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[3] }];
+set_property -dict { PACKAGE_PIN T8    IOSTANDARD LVCMOS33 }        [get_ports { sel_display[3] }];
 
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[0]     }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[1]     }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[2]     }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[3]     }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[4]     }];
-set_property -dict { PACKAGE_PIN XXX   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[4]     }];
+set_property -dict { PACKAGE_PIN U8    IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[0]     }];
+set_property -dict { PACKAGE_PIN R16   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[1]     }];
+set_property -dict { PACKAGE_PIN T13   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[2]     }];
+set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[3]     }];
+set_property -dict { PACKAGE_PIN U12   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[4]     }];
+set_property -dict { PACKAGE_PIN U11   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[5]     }];
 
 # LEDs
 set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 }        [get_ports { dmem_we        }];

@@ -28,7 +28,6 @@ module datapath
     // Packages
     import global_types::*;
     import global_functions::*;
-    import pipeline_pkg::*;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      Internal Wires                                       //
@@ -38,11 +37,11 @@ module datapath
     localparam UNUSED_32 = 32'd0;
 
     // Buses
-    FetchBus     fetch_bus;
-    DecodeBus    decode_bus;
-    ExecuteBus   execute_bus;
-    MemoryBus    memory_bus;
-    WritebackBus writeback_bus;
+    FetchBus     fetch_bus();
+    DecodeBus    decode_bus();
+    ExecuteBus   execute_bus();
+    MemoryBus    memory_bus();
+    WritebackBus writeback_bus();
 
     // Fetch
     logic   jump;
@@ -63,7 +62,6 @@ module datapath
     // Datapath outputs
     assign pc               = fetch_bus.f_pc;
     assign d_instruction    = decode_bus.d_instruction;
-    assign control_bus.zero = memory_bus.m_zero;
     assign dmem_we          = memory_bus.m_dmem_we;
     assign alu_out          = memory_bus.m_alu_out;
     assign dmem_wd          = memory_bus.m_dmem_wd;
@@ -97,37 +95,37 @@ module datapath
     //                                  PIPELINED MULTIPLIER                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    logic en_multiplier, done, d_hi, d_lo, q_hi, q_lo;
-    assign en_multiplier = (execute_bus.e_alu_ctrl == MULTUac);
-    multiplier_pipelined PIPELINED_MULTIPLIER
-    (
-        .clk      (clock),
-        .rst      (reset),
-        .en_in    (en_multiplier),
-        .A        (alu_a),
-        .B        (alu_b),
-        .out_hi   (d_hi),
-        .out_lo   (d_lo),
-        .done     (done)
-    );
+    // logic en_multiplier, done, d_hi, d_lo, q_hi, q_lo;
+    // assign en_multiplier = (execute_bus.e_alu_ctrl == MULTUac);
+    // multiplier_pipelined PIPELINED_MULTIPLIER
+    // (
+    //     .clk      (clock),
+    //     .rst      (reset),
+    //     .en_in    (en_multiplier),
+    //     .A        (alu_a),
+    //     .B        (alu_b),
+    //     .out_hi   (d_hi),
+    //     .out_lo   (d_lo),
+    //     .done     (done)
+    // );
 
-    d_en_reg REG_HI 
-    (
-        .clock    (clock),
-        .reset    (reset),
-        .enable   (done),
-        .d        (d_hi),
-        .q        (q_hi)
-    );
+    // d_en_reg REG_HI 
+    // (
+    //     .clock    (clock),
+    //     .reset    (reset),
+    //     .enable   (done),
+    //     .d        (d_hi),
+    //     .q        (q_hi)
+    // );
 
-    d_en_reg REG_LO
-    (
-        .clock    (clock),
-        .reset    (reset),
-        .enable   (done),
-        .d        (d_lo),
-        .q        (q_lo)
-    );
+    // d_en_reg REG_LO
+    // (
+    //     .clock    (clock),
+    //     .reset    (reset),
+    //     .enable   (done),
+    //     .d        (d_lo),
+    //     .q        (q_lo)
+    // );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     PIPELINE : FETCH                                      //
@@ -273,8 +271,7 @@ module datapath
         .a          (alu_a),                                                        // From execute / forward
         .b          (alu_b), 
         .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
-        .y          (memory_bus.e_alu_out),                                         // To memory
-        .zero       (memory_bus.e_zero)                                             // To memory
+        .y          (memory_bus.e_alu_out)                                          // To memory
     );
 
     // Selects which is the write address
