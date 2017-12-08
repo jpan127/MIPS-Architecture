@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 module partial_product (
   input  [31:0] a, b,  
   output [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 

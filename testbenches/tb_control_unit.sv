@@ -12,7 +12,7 @@ module tb_control_unit;
 
     // Testbench variables
     logic        clock, branch;
-    logic [8:0]  ctrl;
+    logic [9:0]  ctrl;
     integer      success_count;
     integer      fail_count;
 
@@ -22,7 +22,7 @@ module tb_control_unit;
         control_bus.Sender.sel_wa,         // 2 bits
         control_bus.Sender.sel_alu_b,      // 1 bit
         control_bus.Sender.dmem_we,        // 1 bit
-        control_bus.Sender.sel_result,     // 2 bits
+        control_bus.Sender.sel_result,     // 3 bits
         control_bus.Sender.sel_pc          // 2 bits
     };
 

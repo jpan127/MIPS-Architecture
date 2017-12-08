@@ -17,9 +17,11 @@ package global_types;
     typedef logic [9:0]  logic10;
     typedef logic [10:0] logic11;
     typedef logic [11:0] logic12;
+    typedef logic [12:0] logic13;
     typedef logic [15:0] logic16;
     typedef logic [25:0] logic26;
     typedef logic [31:0] logic32;
+    typedef logic [63:0] logic64;
 
     // Constants
     localparam logic32  ZERO32 = 'd0,
@@ -115,13 +117,15 @@ package global_types;
         SEL_ALU_B_SIGN_IMM  = 1'b1
     } sel_alu_b_t;
 
-    typedef enum logic [1:0]
+    typedef enum logic [2:0]
     {
-        SEL_RESULT_DONT_CARE = 2'bZ,
-        SEL_RESULT_RD        = 2'b00,
-        SEL_RESULT_ALU_OUT   = 2'b01,
-        SEL_RESULT_PC_PLUS8  = 2'b10,
-        SEL_RESULT_00        = 2'b11
+        SEL_RESULT_DONT_CARE = 3'bZ,
+        SEL_RESULT_RD        = 3'b000,
+        SEL_RESULT_ALU_OUT   = 3'b001,
+        SEL_RESULT_PC_PLUS8  = 3'b010,
+        SEL_RESULT_MFHI      = 3'b011,
+        SEL_RESULT_MFLO      = 3'b100,
+        SEL_RESULT_00        = 3'b111
     } sel_result_t;
 
     typedef enum logic [1:0]
@@ -166,7 +170,9 @@ package global_types;
         MFHIac      = 4'd9,
         MFLOac      = 4'd10,
         JRac        = 4'd11,
-        NOPac       = 4'd12
+        NOPac       = 4'd12,
+        SLLac       = 4'd13,
+        SRLac       = 4'd14
     } alu_ctrl_t;
 
     typedef enum logic [5:0]
@@ -227,14 +233,14 @@ package control_signals;
 
     import global_types::*;
 
-    // Control unit control struct (11 bits)
+    // Control unit control struct (12 bits)
     typedef struct packed
     {
         rf_we_t      rf_we;         // 1 bit
         sel_wa_t     sel_wa;        // 2 bits
         sel_alu_b_t  sel_alu_b;     // 1 bit
         dmem_we_t    dmem_we;       // 1 bit
-        sel_result_t sel_result;    // 2 bits
+        sel_result_t sel_result;    // 3 bits
         sel_pc_t     sel_pc;        // 2 bits
         alu_op_t     alu_op;        // 2 bits
     } control_t;
@@ -261,8 +267,8 @@ package control_signals;
     SLTc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
     SUBc    = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
     DIVUc   = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, ALU_OP_R    },
-    MFHIc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
-    MFLOc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_ALU_OUT,   SEL_PC_PC_PLUS4, ALU_OP_R    },
+    MFHIc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_MFHI,      SEL_PC_PC_PLUS4, ALU_OP_R    },
+    MFLOc   = '{ RF_WE_ENABLE,  SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_MFLO,      SEL_PC_PC_PLUS4, ALU_OP_R    },
     MULTUc  = '{ RF_WE_DISABLE, SEL_WA_WA1, SEL_ALU_B_DMEM_WD,  DMEM_WE_DISABLE, SEL_RESULT_DONT_CARE, SEL_PC_PC_PLUS4, ALU_OP_R    };
 
 endpackage

@@ -2,9 +2,6 @@
 
 module fetch_reg
 
-    // Packages
-    import pipeline_pkg::FetchBus;
-
 (   input    clock, reset, stall,
     FetchBus fetch_bus     );
 
@@ -24,9 +21,6 @@ module fetch_reg
 endmodule
 
 module decode_reg
-
-    // Packages
-    import pipeline_pkg::DecodeBus;
 
 (   input       clock, reset, stall,
     DecodeBus   decode_bus    );
@@ -52,7 +46,6 @@ endmodule
 module execute_reg
 
     // Packages
-    import pipeline_pkg::ExecuteBus;
     import global_types::*;
 
 (   input       clock, reset, flush,
@@ -103,7 +96,6 @@ endmodule
 module memory_reg
 
     // Packages
-    import pipeline_pkg::MemoryBus;
     import global_types::*;
 
 (   input       clock, reset,
@@ -137,22 +129,11 @@ module memory_reg
         end
     end
 
-    // Status Signals
-    always_ff @(posedge clock or posedge reset) begin 
-        if (reset) begin 
-            memory_bus.m_zero <= 0;
-        end
-        else begin 
-            memory_bus.m_zero <= memory_bus.e_zero;
-        end
-    end
-
 endmodule
 
 module writeback_reg
 
     // Packages
-    import pipeline_pkg::WritebackBus;
     import global_types::*;
 
 (   input           clock, reset,

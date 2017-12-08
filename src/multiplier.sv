@@ -1,19 +1,60 @@
+`timescale 1ns / 1ps
+
 // Unsigned 32-bit 3-stage Pipelined Multiplier
-module multiplier_pipelined (
-    input         clk, rst,
-    input         inputEn, stageEn, outputEn,
+module multiplier_pipelined 
+
+(   input         clk, rst,
+    input         en_in,
     input  [31:0] A, B,
-    output [31:0] hi, lo);
+    output [63:0] product,
+    output logic  done              );
     
+    logic[1:0] state;
+    logic      running;
+
+    // Register Wires - Input Register Outputs                        
+    logic [31:0] Aq, Bq;
+
+    // State machine logic
+    always_ff @(posedge clk, posedge rst) begin 
+        if (rst) begin 
+            state   <= 0;
+            running <= 0;
+            done    <= 0;
+
+            Aq      <= 0;
+            Bq      <= 0;
+        end
+        // Start state machine
+        else if (en_in && !running) begin 
+            state   <= 1;
+            running <= 1;
+            done    <= 0;
+
+            Aq      <= A;
+            Bq      <= B;
+        end
+        // Done, set flag, stop running
+        else if (state == 2'd2) begin 
+            state   <= 0;
+            running <= 0;
+            done    <= 1;
+        end
+        // Go to next state
+        else if (running) begin
+            state   <= state + 1;
+            done    <= 0;
+        end
+        else begin 
+            state   <= 0;
+            running <= 0;
+            done    <= 0;
+        end
+    end
+
     ////////////////////////////////////////////////// 
     //              Input Regigister
     //////////////////////////////////////////////////
-
-    // Register Wires - Input Register Outputs                        
-    wire [31:0] Aq, Bq;
-
-    d_en_reg input_regA (.d(A), .q(Aq), .clock(clk), .reset(rst), .enable((inputEn)));
-    d_en_reg input_regB (.d(B), .q(Aq), .clock(clk), .reset(rst), .enable((inputEn)));
 
     // 32-bit Partial Products
     wire [31:0] pp0,  pp1,  pp2,  pp3,  pp4,  pp5,  pp6,  pp7, 
@@ -22,7 +63,7 @@ module multiplier_pipelined (
                 pp24, pp25, pp26, pp27, pp28, pp29, pp30, pp31;
 
     partial_product pp_32(
-        .a    (Aq),      .b    (Aq),
+        .a    (Aq),      .b    (Bq),
         .pp0  (pp0),    .pp1  (pp1),    .pp2  (pp2),    .pp3  (pp3),
         .pp4  (pp4),    .pp5  (pp5),    .pp6  (pp6),    .pp7  (pp7),
         .pp8  (pp8),    .pp9  (pp9),    .pp10 (pp10),   .pp11 (pp11),   
@@ -125,14 +166,14 @@ module multiplier_pipelined (
     // Register Wires - Stage Register Outputs                        
     wire [63:0] sumL1_0q, sumL1_1q, sumL1_2q,  sumL1_3q,  sumL1_4q,  sumL1_5q,  sumL1_6q,  sumL1_7q;
 
-    d_en_reg #(64) stage_reg0 (.d(sumL1_0), .q(sumL1_0q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg1 (.d(sumL1_1), .q(sumL1_1q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg2 (.d(sumL1_2), .q(sumL1_2q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg3 (.d(sumL1_3), .q(sumL1_3q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg4 (.d(sumL1_4), .q(sumL1_4q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg5 (.d(sumL1_5), .q(sumL1_5q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg6 (.d(sumL1_6), .q(sumL1_6q), .clock(clk), .reset(rst), .enable((stageEn)));
-    d_en_reg #(64) stage_reg7 (.d(sumL1_7), .q(sumL1_7q), .clock(clk), .reset(rst), .enable((stageEn)));
+    d_reg #(64) stage_reg0 (.d(sumL1_0), .q(sumL1_0q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg1 (.d(sumL1_1), .q(sumL1_1q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg2 (.d(sumL1_2), .q(sumL1_2q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg3 (.d(sumL1_3), .q(sumL1_3q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg4 (.d(sumL1_4), .q(sumL1_4q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg5 (.d(sumL1_5), .q(sumL1_5q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg6 (.d(sumL1_6), .q(sumL1_6q), .clock(clk), .reset(rst));
+    d_reg #(64) stage_reg7 (.d(sumL1_7), .q(sumL1_7q), .clock(clk), .reset(rst));
 
     // 2nd Level Multiplier CLAs
     cla_64bit cla_64bitL2_0   (.A(sumL1_0q[63:0]),  .B(sumL1_1q[63:0]), .c_in(1'b0), .c_out(d24), .Sum(sumL2_0));
@@ -145,13 +186,7 @@ module multiplier_pipelined (
     cla_64bit cla_64bitL3_1   (.A(sumL2_2[63:0]),  .B(sumL2_3[63:0]),  .c_in(1'b0), .c_out(d29), .Sum(sumL3_1));
 
     // 4rd Level Multiplier CLAs
-    cla_64bit cla_64bitL4_0   (.A(sumL3_0[63:0]),  .B(sumL3_1[63:0]),  .c_in(1'b0), .c_out(d30), .Sum(sumL4_0));
-
-    ////////////////////////////////////////////////// 
-    //              Output Regigister
-    //////////////////////////////////////////////////
-    d_en_reg #(32) output_regLO (.d(sumL4_0[31:0]),  .q(lo), .clock(clk), .reset(rst), .enable((outputEn)));
-    d_en_reg #(32) output_regHI (.d(sumL4_0[63:32]), .q(hi), .clock(clk), .reset(rst), .enable((outputEn)));
+    cla_64bit cla_64bitL4_0   (.A(sumL3_0[63:0]),  .B(sumL3_1[63:0]),  .c_in(1'b0), .c_out(d30), .Sum(product));
 endmodule
 
 // 4-bit CLA Logic

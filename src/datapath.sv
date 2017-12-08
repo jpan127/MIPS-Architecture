@@ -11,6 +11,9 @@ module datapath
 
 (   input           clock, reset,
     input   [31:0]  instruction,
+    // Read registers from switches
+    input   [4:0]   rf_ra2,
+    output  [31:0]  rf_rd2,
     // To / From the DMEM
     input   [31:0]  dmem_rd,
     output          dmem_we,
@@ -20,13 +23,11 @@ module datapath
     output  [31:0]  d_instruction,          // Needs to be outputted to the CU so the CU gets the delay too
     output          branch,
     // Interfaces
-    DebugBus            debug_bus,
     ControlBus.Receiver control_bus     );
 
     // Packages
     import global_types::*;
     import global_functions::*;
-    import pipeline_pkg::*;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      Internal Wires                                       //
@@ -36,11 +37,11 @@ module datapath
     localparam UNUSED_32 = 32'd0;
 
     // Buses
-    FetchBus     fetch_bus;
-    DecodeBus    decode_bus;
-    ExecuteBus   execute_bus;
-    MemoryBus    memory_bus;
-    WritebackBus writeback_bus;
+    FetchBus     fetch_bus();
+    DecodeBus    decode_bus();
+    ExecuteBus   execute_bus();
+    MemoryBus    memory_bus();
+    WritebackBus writeback_bus();
 
     // Fetch
     logic   jump;
@@ -61,7 +62,6 @@ module datapath
     // Datapath outputs
     assign pc               = fetch_bus.f_pc;
     assign d_instruction    = decode_bus.d_instruction;
-    assign control_bus.zero = memory_bus.m_zero;
     assign dmem_we          = memory_bus.m_dmem_we;
     assign alu_out          = memory_bus.m_alu_out;
     assign dmem_wd          = memory_bus.m_dmem_wd;
@@ -83,12 +83,61 @@ module datapath
         .w_rf_wa           (writeback_bus.w_rf_wa),
         .m_rf_we           (memory_bus.m_rf_we),
         .w_rf_we           (writeback_bus.w_rf_we),
-        .w_sel_result      (writeback_bus.w_sel_result),
+        .e_sel_result      (execute_bus.e_sel_result),
         .sel_forward_alu_a (sel_forward_alu_a),
         .sel_forward_alu_b (sel_forward_alu_b),
         .f_stall           (f_stall),
         .d_stall           (d_stall),
         .e_flush           (e_flush)
+    );
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                  PIPELINED MULTIPLIER                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    // logic   en_mult, done;
+    // logic32 product_hi, product_lo;
+    // logic64 product;
+
+    // assign product = alu_a * alu_b;
+
+    // // Special Purpose Registers : HI and LO
+    // d_en_reg REG_HI ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[63:32]), .q(product_hi) );
+    // d_en_reg REG_LO ( .clock(clock), .reset(reset), .enable(en_mult), .d(product[31: 0]), .q(product_lo) );
+
+    logic   en_mult, done;
+    logic32 product_hi, product_lo;
+    logic64 product;
+    assign en_mult = (execute_bus.d_alu_ctrl == MULTUac);                           // Only enabled with correct ALU opcode
+    
+    multiplier_pipelined PIPELINED_MULTIPLIER
+    (
+        .clk      (clock),
+        .rst      (reset),
+        .en_in    (en_mult),                                                        // From decode
+        .A        (execute_bus.d_rd0),                                              // From decode
+        .B        (execute_bus.d_rd1),                                              // From decode
+        .product  (product),                                                        // To writeback / hi / lo
+        .done     (done)                                                            // To hi / lo
+    );
+
+    // When multiplier is done it will enable these registers and load in the product
+    d_en_reg REG_HI 
+    (
+        .clock    (clock),
+        .reset    (reset),
+        .enable   (done),
+        .d        (product[63:32]),
+        .q        (product_hi)
+    );
+
+    d_en_reg REG_LO
+    (
+        .clock    (clock),
+        .reset    (reset),
+        .enable   (done),
+        .d        (product[31:0]),
+        .q        (product_lo)
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -139,6 +188,7 @@ module datapath
     );
 
     // Branch logic + address
+    // If hazard between branch and instruction before, there is no forwarding or stalling
     assign branch      = (execute_bus.d_rd0 == execute_bus.d_rd1) & (decode_bus.d_instruction[31:26] == OPCODE_BEQ);
     assign sign_imm    = sign_extend(decode_bus.d_instruction[15:0]);               // From decode
     assign sign_imm_sh = shift_left_2(sign_imm);
@@ -168,12 +218,13 @@ module datapath
     regfile RF  
     ( 
         .clock      (clock),
+        .reset      (reset),
         .we         (writeback_bus.w_rf_we),                                        // From writeback
         .wa         (writeback_bus.w_rf_wa),                                        // From writeback
         .ra0        (ra0),                                                          // From decode
         .ra1        (ra1),                                                          // From decode
-        .ra2        (debug_bus.rf_ra),  
-        .rd2        (debug_bus.rf_rd), 
+        .ra2        (rf_ra2),                                                       // From switches
+        .rd2        (rf_rd2),                                                       // To 7seg
         .wd         (result),                                                       // From writeback
         .rd0        (execute_bus.d_rd0),                                            // To execute
         .rd1        (execute_bus.d_rd1)                                             // To execute
@@ -192,7 +243,7 @@ module datapath
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Bus Inputs
-    assign memory_bus.e_dmem_wd    = execute_bus.e_rd1;                             // From execute
+    assign memory_bus.e_dmem_wd    = forward_alu_b;                                 // From execute
     assign memory_bus.e_rf_we      = execute_bus.e_rf_we;                           // From execute
     assign memory_bus.e_sel_result = execute_bus.e_sel_result;                      // From execute
     assign memory_bus.e_dmem_we    = execute_bus.e_dmem_we;                         // From execute
@@ -234,8 +285,7 @@ module datapath
         .a          (alu_a),                                                        // From execute / forward
         .b          (alu_b), 
         .sel        (execute_bus.e_alu_ctrl),                                       // From execute 
-        .y          (memory_bus.e_alu_out),                                         // To memory
-        .zero       (memory_bus.e_zero)                                             // To memory
+        .y          (memory_bus.e_alu_out)                                          // To memory
     );
 
     // Selects which is the write address
@@ -270,12 +320,16 @@ module datapath
     assign writeback_bus.m_sel_result = memory_bus.m_sel_result;                    // From memory
     assign writeback_bus.m_pc_plus4   = memory_bus.m_pc_plus4;                      // From memory
     
-    mux4 #(32) MUX_RESULT
+    mux8 #(32) MUX_RESULT
     ( 
         .a          (writeback_bus.w_dmem_rd),                                      // From writeback
         .b          (writeback_bus.w_alu_out),                                      // From writeback
         .c          (pc_plus8),                                                     // From writeback
-        .d          (UNUSED_32),                                                    // UNUSED
+        .d          (product_hi),                                                   // UNUSED
+        .e          (product_lo),
+        .f          (UNUSED_32),
+        .g          (UNUSED_32),
+        .h          (UNUSED_32),
         .sel        (writeback_bus.w_sel_result),                                   // From writeback 
         .y          (result)                                                        // To fetch + execute
     );

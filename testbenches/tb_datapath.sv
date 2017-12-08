@@ -12,7 +12,6 @@ module tb_datapath;
     // Packages
     import testbench_globals::*;
     import global_types::*;
-    import pipeline_pkg::*;
 
     // DUT Ports
     ControlBus control_bus();
@@ -21,6 +20,9 @@ module tb_datapath;
     logic32    dmem_rd;
     logic      dmem_we, branch;
     logic32    pc, alu_out, dmem_wd;
+    // Debug bus
+    logic5  rf_ra2;
+    logic32 rf_rd2;
 
     // Testbench Variables
     localparam  logic5 ignore_rs    = 'd0,
@@ -33,12 +35,11 @@ module tb_datapath;
     integer fail_count;
     integer instructions_tested;
 
-    DebugBus debug_bus();
-
     // DUT
     datapath DUT
     (
-        .debug_bus          (debug_bus),
+        .rf_ra2             (rf_ra2),
+        .rf_rd2             (rf_rd2),
         .clock              (clock),
         .reset              (reset),
         .instruction        (instruction),
@@ -53,13 +54,13 @@ module tb_datapath;
     );
 
     // Control signal
-    reg  [11:0] ctrl;
+    logic13 ctrl;
     always_comb begin
         {
             control_bus.rf_we,          // 1 bit
             control_bus.sel_wa,         // 2 bits
             control_bus.sel_alu_b,      // 1 bit
-            control_bus.sel_result,     // 2 bits
+            control_bus.sel_result,     // 3 bits
             control_bus.sel_pc,         // 2 bits
             control_bus.alu_ctrl        // 4 bits
         } = ctrl;

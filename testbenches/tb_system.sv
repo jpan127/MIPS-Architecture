@@ -14,33 +14,20 @@ module tb_system;
 
     // DUT ports
     logic     clock, reset;      // Inputs
+    logic6    gpio_in;    
+    logic5    rf_ra2;
+
+    logic32   rf_rd2;
     logic32   dmem_wd, alu_out;  // Outputs
     logic     dmem_we;
-    logic32   instruction;
-    logic32   pc;
-    logic9    dmem_addr;
-    logic32   dmem_rd;
-    logic5    rf_ra;
-    logic32   rf_rd;
+    logic32   instruction, pc;
+    logic16   gpio_out;
 
     // Testbench variables
-    logic16    counter;
+    logic16   counter;
 
     // DUT
-    system_debug DUT(.*);
-
-    // [TASK] Log some information
-    task log;
-        begin
-            if (dmem_we) begin 
-                $display("DMEM Write Data : %d", dmem_wd);
-            end
-            $display("ALU               : %d", alu_out);
-            $display("IMEM[%d]        : %H", pc[11:2], instruction);
-            $display("DMEM[%d] Read   : %d", dmem_addr, dmem_rd);
-            $display("-------------------------------");
-        end
-    endtask
+    soc DUT(.*);
 
     // [TASK] Assert values are equal
     task assert_equal;
@@ -58,7 +45,8 @@ module tb_system;
     // Initial state
     initial begin
         $display("///////////////////////////////////////////////////////////////////////");
-        clock = 0;
+        clock    = 0;
+        gpio_in = 0;
         `reset_system
     end
 
@@ -77,8 +65,8 @@ module tb_system;
         else begin
 
             // Stop simulation after program ends
-            if (instruction == 32'h0800001F) begin
-                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_2], "ALU FINAL RESULT");
+            if (instruction == 32'h0800001D) begin
+                assert_equal(32'h18, DUT.MIPS.DP.RF.rf[REG_7], "ALU FINAL RESULT");
                 $display("Total Instructions: %d", counter);
                 $display("///////////////////////////////////////////////////////////////////////");
                 $stop;
@@ -96,11 +84,11 @@ module tb_system;
                         10'h1FC: assert_equal(32'h4,  dmem_wd, "DMEM_WD 1" );
                         10'h1F8: assert_equal(32'hC,  dmem_wd, "DMEM_WD 2" );   // Assembler says 0x8 but we use JAL = PC + 8
                         10'h1F4: assert_equal(32'h3,  dmem_wd, "DMEM_WD 3" );
-                        10'h1F0: assert_equal(32'h58, dmem_wd, "DMEM_WD 4" );
+                        10'h1F0: assert_equal(32'h50, dmem_wd, "DMEM_WD 4" );
                         10'h1EC: assert_equal(32'h2,  dmem_wd, "DMEM_WD 5" );
-                        10'h1E8: assert_equal(32'h58, dmem_wd, "DMEM_WD 6" );
+                        10'h1E8: assert_equal(32'h50, dmem_wd, "DMEM_WD 6" );
                         10'h1E4: assert_equal(32'h1,  dmem_wd, "DMEM_WD 7" );
-                        10'h1E0: assert_equal(32'h58, dmem_wd, "DMEM_WD 8" );
+                        10'h1E0: assert_equal(32'h50, dmem_wd, "DMEM_WD 8" );
                     endcase
                 end
             end

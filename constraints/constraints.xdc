@@ -6,16 +6,26 @@ set_property -dict { PACKAGE_PIN E3    IOSTANDARD LVCMOS33 }        [get_ports {
 set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 }        [get_ports { button         }];
 set_property -dict { PACKAGE_PIN M18   IOSTANDARD LVCMOS33 }        [get_ports { reset          }];
    
-# Controls
+# Switches
 set_property -dict { PACKAGE_PIN J15   IOSTANDARD LVCMOS33 }        [get_ports { rf_ra[0]       }];
 set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVCMOS33 }        [get_ports { rf_ra[1]       }];
 set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33 }        [get_ports { rf_ra[2]       }];
 set_property -dict { PACKAGE_PIN R15   IOSTANDARD LVCMOS33 }        [get_ports { rf_ra[3]       }];
 set_property -dict { PACKAGE_PIN R17   IOSTANDARD LVCMOS33 }        [get_ports { rf_ra[4]       }];
+
 set_property -dict { PACKAGE_PIN T18   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[0] }];
 set_property -dict { PACKAGE_PIN U18   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[1] }];
 set_property -dict { PACKAGE_PIN R13   IOSTANDARD LVCMOS33 }        [get_ports { sel_display[2] }];
+set_property -dict { PACKAGE_PIN T8    IOSTANDARD LVCMOS33 }        [get_ports { sel_display[3] }];
 
+set_property -dict { PACKAGE_PIN U8    IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[0]     }];
+set_property -dict { PACKAGE_PIN R16   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[1]     }];
+set_property -dict { PACKAGE_PIN T13   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[2]     }];
+set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[3]     }];
+set_property -dict { PACKAGE_PIN U12   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[4]     }];
+set_property -dict { PACKAGE_PIN U11   IOSTANDARD LVCMOS33 }        [get_ports { gpio_in[5]     }];
+
+# LEDs
 set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 }        [get_ports { dmem_we        }];
 
 set_property -dict { PACKAGE_PIN K13   IOSTANDARD LVCMOS33 }        [get_ports { led_value[0]   }];

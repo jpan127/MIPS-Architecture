@@ -18,7 +18,6 @@ module tb_mips;
     logic32  instruction, dmem_rd;   // Input
     logic    dmem_we;                // Output
     logic32  pc, alu_out, dmem_wd;   // Output
-    DebugBus debug_bus();
 
     // Testbench Variables
     localparam  logic5 ignore_rs    = 'd0,
