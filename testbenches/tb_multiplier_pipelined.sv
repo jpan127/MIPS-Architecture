@@ -38,25 +38,25 @@ initial begin
   $display("---Simulation Begining---");
 
     // Edge Case Verification
-    a = 0; b = 0; calc_correct; clock(3); assert;
+    a = 0;              b = 0;              calc_correct;   clock(3); assert;
 
-    a = 0; b = 1; calc_correct; clock(3); assert;   
+    a = 0;              b = 1;              calc_correct;   clock(3); assert;   
 
-    a = 1; b = 0; #2; calc_correct; clock(3); assert;
+    a = 1;              b = 0; #2;          calc_correct;   clock(3); assert;
 
-    a = 0; b = 32'hffffffff; calc_correct; clock(3); assert;
+    a = 0;              b = 32'hffffffff;   calc_correct;   clock(3); assert;
 
-    a = 32'hffffffff; b = 0; calc_correct; clock(3); assert;
+    a = 32'hffffffff;   b = 0;              calc_correct;   clock(3); assert;
 
-    a = 1; b = 32'hffffffff; calc_correct;  clock(3); assert;
+    a = 1;              b = 32'hffffffff;   calc_correct;   clock(3); assert;
 
-    a = 32'hffffffff; b = 1; calc_correct;  clock(3); assert;
+    a = 32'hffffffff;   b = 1;              calc_correct;   clock(3); assert;
 
-    a = 32'hfffffffe; b = 32'hfffffffe; calc_correct; clock(3); assert;
+    a = 32'hfffffffe;   b = 32'hfffffffe;   calc_correct;   clock(3); assert;
 
-    a = 32'hfffffffe; b = 32'hffffffff; calc_correct;  clock(3); assert;
+    a = 32'hfffffffe;   b = 32'hffffffff;   calc_correct;   clock(3); assert;
 
-    a = 32'hffffffff; b = 32'hffffffff; calc_correct;  clock(3); assert;
+    a = 32'hffffffff;   b = 32'hffffffff;   calc_correct;   clock(3); assert;
 
     // Random Value Verification
     for (i=0; i<1000; i++) begin        
@@ -74,7 +74,6 @@ initial begin
           $stop;
         end
     end
-
   $display("---Simulation successful---");
 end
 endmodule
